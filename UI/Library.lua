@@ -1322,6 +1322,16 @@ local function buildColorPickerWindow(ColorPickerGui)
         return holder, box
     end
 
+    local COLORPICKER_BackdropBlocker = Instance.new("TextButton")
+    COLORPICKER_BackdropBlocker.Parent = ColorPickerGui
+    COLORPICKER_BackdropBlocker.Name = "BackdropBlocker"
+    COLORPICKER_BackdropBlocker.Size = UDim2.fromScale(1,1)
+    COLORPICKER_BackdropBlocker.Position = UDim2.fromScale(0,0)
+    COLORPICKER_BackdropBlocker.BackgroundTransparency = 1
+    COLORPICKER_BackdropBlocker.Text = ""
+    COLORPICKER_BackdropBlocker.AutoButtonColor = false
+    COLORPICKER_BackdropBlocker.ZIndex = 0
+
     local COLORPICKER_MainFrame = Instance.new("Frame")
     COLORPICKER_MainFrame.Parent = ColorPickerGui
     COLORPICKER_MainFrame.Name = "MainBg"
@@ -1728,6 +1738,7 @@ local function buildColorPickerWindow(ColorPickerGui)
     local _, COLORPICKER_VInput = createValueInput("V", UDim2.new(0.847,0,0.66,0), COLORPICKER_MainFrame)
 
     return {
+        COLORPICKER_BackdropBlocker = COLORPICKER_BackdropBlocker,
         COLORPICKER_MainFrame = COLORPICKER_MainFrame,
         COLORPICKER_ColorPickerMainFrame = COLORPICKER_ColorPickerMainFrame,
         COLORPICKER_ColorPickerMainFrameDot = COLORPICKER_ColorPickerMainFrameDot,
@@ -2023,9 +2034,20 @@ local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 
+local LibraryDestroyed = false
+
+local function isAlive(obj)
+	return (not LibraryDestroyed) and obj ~= nil and obj.Parent ~= nil
+end
+
 
 local function getMousePosition()
-	return UIS:GetMouseLocation()
+	local mouse = UIS:GetMouseLocation()
+	local inset = select(1, GuiService:GetGuiInset())
+	if typeof(inset) == "Vector2" then
+		mouse = mouse - inset
+	end
+	return mouse
 end
 
 local function fadeOutGuiTree(root, duration)
@@ -2080,7 +2102,7 @@ local OPEN_TWEEN = TweenInfo.new(0.32, Enum.EasingStyle.Quart, Enum.EasingDirect
 local CLOSE_TWEEN = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 
 local function tween(obj, info, props)
-	if not obj then
+	if LibraryDestroyed or not obj then
 		return nil
 	end
 
@@ -2158,6 +2180,9 @@ end
 local dragRegistry = {}
 
 RunService.RenderStepped:Connect(function(dt)
+	if LibraryDestroyed then
+		return
+	end
 	local alpha = math.clamp(dt * 18, 0, 1)
 	for _, data in pairs(dragRegistry) do
 		if data.Frame and data.Frame.Parent then
@@ -2189,12 +2214,15 @@ local function makeDraggable(handle, frame)
 
 	task.defer(function()
 		RunService.Heartbeat:Wait()
-		local pos = frame.AbsolutePosition
-		dragRegistry[id].Target = Vector2.new(pos.X, pos.Y)
+		if LibraryDestroyed or not frame.Parent then
+			return
+		end
+		local pos = frame.Position
+		dragRegistry[id].Target = Vector2.new(pos.X.Offset, pos.Y.Offset)
 	end)
 
 	handle.InputBegan:Connect(function(input)
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		if LibraryDestroyed or input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 			return
 		end
 
@@ -2203,10 +2231,11 @@ local function makeDraggable(handle, frame)
 			return
 		end
 
+		local currentPos = Vector2.new(frame.Position.X.Offset, frame.Position.Y.Offset)
 		data.Dragging = true
 		local mousePos = getMousePosition()
-		data.DragOffset = mousePos - frame.AbsolutePosition
-		data.Target = Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
+		data.DragOffset = mousePos - currentPos
+		data.Target = currentPos
 		input.Changed:Connect(function()
 			if input.UserInputState == Enum.UserInputState.End then
 				data.Dragging = false
@@ -2215,6 +2244,9 @@ local function makeDraggable(handle, frame)
 	end)
 
 	UIS.InputChanged:Connect(function(input)
+		if LibraryDestroyed then
+			return
+		end
 		local data = dragRegistry[id]
 		if not data or not data.Dragging then
 			return
@@ -2525,15 +2557,34 @@ local function showConfirm()
 	end)
 end
 
+local function destroyAmphibia()
+	if LibraryDestroyed then
+		return
+	end
+	LibraryDestroyed = true
+	if UI.MainGui then
+		UI.MainGui:Destroy()
+	end
+	if UI.ColorPickerGui then
+		UI.ColorPickerGui:Destroy()
+	end
+	if UI.NotificationsGui then
+		UI.NotificationsGui:Destroy()
+	end
+	local env = safeGetEnv()
+	if env and env.Amphibia == Amphibia then
+		env.Amphibia = nil
+	end
+end
+
 ConfirmNo.MouseButton1Click:Connect(hideConfirm)
 ConfirmYes.MouseButton1Click:Connect(function()
 	hideConfirm()
-	UI.ColorPickerGui.Enabled = false
 	tween(UI.MAIN_MainDarkFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
 	tween(UI.MAIN_MainBgFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
 	tween(mainScale, CLOSE_TWEEN, {Scale = 0.97})
-	task.delay(0.22, function()
-		UI.MainGui.Enabled = false
+	task.delay(0.24, function()
+		destroyAmphibia()
 	end)
 end)
 UI.MAIN_CloseButton.MouseButton1Click:Connect(showConfirm)
@@ -2651,17 +2702,22 @@ DropdownItemsPadding.Parent = DropdownItems
 
 local activeDropdown = nil
 local dropdownBindings = setmetatable({}, {__mode = "k"})
+local dropdownNonce = 0
 
 local function closeDropdown()
-	if not activeDropdown then
+	if LibraryDestroyed or not activeDropdown then
 		return
 	end
-	local closing = activeDropdown
+	dropdownNonce += 1
+	local closingNonce = dropdownNonce
 	activeDropdown = nil
 	local h = DropdownWindow.AbsoluteSize.Y > 0 and DropdownWindow.AbsoluteSize.Y or DropdownWindow.Size.Y.Offset
-	tween(DropdownWindow, CLOSE_TWEEN, {Size = UDim2.fromOffset(DropdownWindow.Size.X.Offset, 0), Position = UDim2.fromOffset(DropdownWindow.Position.X.Offset, DropdownWindow.Position.Y.Offset + 6)})
+	tween(DropdownWindow, CLOSE_TWEEN, {Size = UDim2.fromOffset(DropdownWindow.Size.X.Offset, 0)})
 	task.delay(0.22, function()
-		if not activeDropdown and closing then
+		if LibraryDestroyed then
+			return
+		end
+		if closingNonce == dropdownNonce and not activeDropdown then
 			DropdownWindow.Visible = false
 			DropdownWindow.Size = UDim2.fromOffset(DropdownWindow.Size.X.Offset, h)
 		end
@@ -2792,7 +2848,7 @@ local function rebuildDropdown(binding)
 end
 
 local function openDropdown(binding)
-	if not binding or not binding.Button or not binding.Button.Parent then
+	if LibraryDestroyed or not binding or not binding.Button or not binding.Button.Parent then
 		return
 	end
 
@@ -2801,6 +2857,7 @@ local function openDropdown(binding)
 		return
 	end
 
+	dropdownNonce += 1
 	activeDropdown = binding
 	DropdownTitle.Text = binding.Title or binding.Button:FindFirstChild("NameText") and binding.Button.NameText.Text or "Picker"
 	rebuildDropdown(binding)
@@ -2917,7 +2974,7 @@ function Amphibia.BindDropdown(dropdownButton, config)
 end
 
 UIS.InputBegan:Connect(function(input, processed)
-	if processed then
+	if LibraryDestroyed or processed then
 		return
 	end
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
@@ -3138,11 +3195,12 @@ local function setActivePicker(binding)
 end
 
 local function openColorPicker(binding)
-	if not binding then
+	if LibraryDestroyed or not binding then
 		return
 	end
 	setActivePicker(binding)
 	UI.ColorPickerGui.Enabled = true
+	UI.MAIN_HeaderBgFrame.Active = false
 	UI.COLORPICKER_MainFrame.BackgroundTransparency = 1
 	pickerScale.Scale = 0.97
 	tween(UI.COLORPICKER_MainFrame, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
@@ -3150,15 +3208,19 @@ local function openColorPicker(binding)
 end
 
 local function closeColorPicker()
-	if not UI.ColorPickerGui.Enabled then
+	if LibraryDestroyed or not UI.ColorPickerGui.Enabled then
 		return
 	end
 	if colorPickerActiveBinding then
 		pushRecentColor(colorPickerActiveBinding.Value)
 	end
+	UI.MAIN_HeaderBgFrame.Active = true
 	tween(UI.COLORPICKER_MainFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
 	tween(pickerScale, CLOSE_TWEEN, {Scale = 0.97})
 	task.delay(0.22, function()
+		if LibraryDestroyed then
+			return
+		end
 		UI.ColorPickerGui.Enabled = false
 	end)
 end
@@ -3208,7 +3270,7 @@ UI.COLORPICKER_ColorSelectorFrame.InputBegan:Connect(function(input)
 end)
 
 UIS.InputChanged:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseMovement then
+	if LibraryDestroyed or input.UserInputType ~= Enum.UserInputType.MouseMovement then
 		return
 	end
 	local mousePos = getMousePosition()
@@ -3220,7 +3282,7 @@ UIS.InputChanged:Connect(function(input)
 end)
 
 UIS.InputEnded:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+	if LibraryDestroyed or input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 		return
 	end
 	if colorPickerState.DraggingSquare or colorPickerState.DraggingHue then
@@ -3245,6 +3307,7 @@ for _, frame in ipairs({UI.COLORPICKER_LastColorLastColor1, UI.COLORPICKER_LastC
 end
 
 UI.COLORPICKER_CloseButton.MouseButton1Click:Connect(closeColorPicker)
+UI.COLORPICKER_BackdropBlocker.MouseButton1Click:Connect(closeColorPicker)
 UI.COLORPICKER_ResetToDefault.MouseButton1Click:Connect(function()
 	if not colorPickerActiveBinding then
 		return
@@ -3519,13 +3582,16 @@ function Amphibia.BindSlider(sliderButton, config)
 	end
 
 	UIS.InputChanged:Connect(function(input)
-		if not dragging or input.UserInputType ~= Enum.UserInputType.MouseMovement then
+		if LibraryDestroyed or not dragging or input.UserInputType ~= Enum.UserInputType.MouseMovement then
 			return
 		end
 		apply(valueFromMouse(getMousePosition()), true)
 	end)
 
 	UIS.InputEnded:Connect(function(input)
+		if LibraryDestroyed then
+			return
+		end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = false
 		end
@@ -3590,7 +3656,7 @@ function Amphibia.BindKeybind(keybindButton, config)
 	end)
 
 	UIS.InputBegan:Connect(function(input, processed)
-		if processed then
+		if LibraryDestroyed or processed then
 			return
 		end
 
@@ -3790,6 +3856,9 @@ local function createNotificationRenderLoop()
 	end
 	notificationRenderHookCreated = true
 	RunService.RenderStepped:Connect(function(dt)
+		if LibraryDestroyed then
+			return
+		end
 		for _, entry in ipairs(notifications) do
 			if entry.Frame and entry.Frame.Parent then
 				if not entry.Dragging and not entry.ManualPosition then
@@ -3843,32 +3912,51 @@ local function layoutNotificationFrame(frame)
 	if not frame then
 		return
 	end
+	local title = frame:FindFirstChild("NotificationName")
 	local desc = frame:FindFirstChild("NotificationDescription")
 	local timeLeft = frame:FindFirstChild("TimeLeft")
 	local dragLine = frame:FindFirstChild("DragLine")
 	local timeline = frame:FindFirstChild("TimeLine")
 	local timelineGlow = frame:FindFirstChild("TimeLineGlow")
+	local freezeButton = frame:FindFirstChild("FreezeButton")
+	local closeButton = frame:FindFirstChild("CloseButton")
 	if not desc then
 		return
 	end
 	RunService.Heartbeat:Wait()
-	local descHeight = math.max(30, desc.TextBounds.Y)
-	desc.Size = UDim2.fromOffset(182, descHeight)
-	local height = math.max(74, 18 + 18 + descHeight + 18)
-	frame.Size = UDim2.fromOffset(253, height)
+	local width = 253
+	local descX = 20
+	local descY = 28
+	local descWidth = 195
+	local descHeight = math.max(16, desc.TextBounds.Y)
+	desc.Position = UDim2.fromOffset(descX, descY)
+	desc.Size = UDim2.fromOffset(descWidth, descHeight)
+	if title then
+		title.Position = UDim2.fromOffset(19, 6)
+		title.Size = UDim2.fromOffset(150, 20)
+	end
+	local height = math.max(58, descY + descHeight + 16)
+	frame.Size = UDim2.fromOffset(width, height)
 	if dragLine then
-		dragLine.Size = UDim2.fromOffset(5, math.max(43, height - 22))
+		dragLine.Position = UDim2.fromOffset(6, 10)
+		dragLine.Size = UDim2.fromOffset(5, math.max(34, height - 20))
+	end
+	if freezeButton then
+		freezeButton.Position = UDim2.fromOffset(width - 46, 2)
+	end
+	if closeButton then
+		closeButton.Position = UDim2.fromOffset(width - 24, 0)
 	end
 	if timeLeft then
-		timeLeft.Position = UDim2.fromOffset(210, height - 25)
+		timeLeft.Position = UDim2.fromOffset(width - 42, height - 22)
 	end
 	if timeline then
 		timeline.Position = UDim2.fromOffset(0, height - 2)
-		timeline.Size = UDim2.fromOffset(frame.Size.X.Offset, 2)
+		timeline.Size = UDim2.fromOffset(width, 2)
 	end
 	if timelineGlow then
-		timelineGlow.Position = UDim2.fromOffset(0, height - 17)
-		timelineGlow.Size = UDim2.fromOffset(frame.Size.X.Offset, 17)
+		timelineGlow.Position = UDim2.fromOffset(0, height - 14)
+		timelineGlow.Size = UDim2.fromOffset(width, 14)
 	end
 end
 
@@ -3879,10 +3967,12 @@ local function removeNotification(entry)
 			break
 		end
 	end
-	if entry.Frame then
+	if entry.Frame and entry.Frame.Parent then
 		entry.Frame:Destroy()
 	end
-	refreshNotificationTargets()
+	if not LibraryDestroyed then
+		refreshNotificationTargets()
+	end
 end
 
 function Amphibia.Notify(config)
@@ -3929,20 +4019,27 @@ function Amphibia.Notify(config)
 	animateIconButton(closeButton, 0.84, 0.58)
 	if freezeIcon then
 		freezeButton.MouseEnter:Connect(function()
-			tween(freezeIcon, DEFAULT_TWEEN, {ImageTransparency = 0.56})
+			if frame:GetAttribute("Frozen") then
+				tween(freezeIcon, DEFAULT_TWEEN, {ImageTransparency = 0.2})
+			else
+				tween(freezeIcon, DEFAULT_TWEEN, {ImageTransparency = 0.56})
+			end
 		end)
 		freezeButton.MouseLeave:Connect(function()
-			if not frame:GetAttribute("Frozen") then
+			if frame:GetAttribute("Frozen") then
+				tween(freezeIcon, DEFAULT_TWEEN, {ImageTransparency = 0.2})
+			else
 				tween(freezeIcon, DEFAULT_TWEEN, {ImageTransparency = 0.84})
 			end
 		end)
 	end
 
+	local durationValue = tonumber(config.Duration) or 3.5
 	local entry = {
 		Frame = frame,
-		Duration = tonumber(config.Duration) or 3.5,
-		EndTime = tick() + (tonumber(config.Duration) or 3.5),
-		Remaining = tonumber(config.Duration) or 3.5,
+		Duration = durationValue,
+		EndTime = tick() + durationValue,
+		Remaining = durationValue,
 		Frozen = false,
 		Dragging = false,
 		ManualPosition = false,
@@ -3958,10 +4055,11 @@ function Amphibia.Notify(config)
 		self.Closing = true
 		local scale = notificationScaleCache[frame]
 		if scale then
-			tween(scale, CLOSE_TWEEN, {Scale = 0.97})
+			tween(scale, CLOSE_TWEEN, {Scale = 0.9})
 		end
-		fadeOutGuiTree(frame, 0.18)
-		task.delay(0.2, function()
+		fadeOutGuiTree(frame, 0.2)
+		tween(frame, CLOSE_TWEEN, {BackgroundTransparency = 1, Size = UDim2.fromOffset(frame.AbsoluteSize.X > 0 and frame.AbsoluteSize.X or frame.Size.X.Offset, math.max(0, (frame.AbsoluteSize.Y > 0 and frame.AbsoluteSize.Y or frame.Size.Y.Offset) - 10))})
+		task.delay(0.24, function()
 			removeNotification(self)
 		end)
 	end
@@ -4005,7 +4103,7 @@ function Amphibia.Notify(config)
 			end
 			entry.Dragging = true
 			entry.ManualPosition = true
-			entry.DragOffset = (getMousePosition()) - frame.AbsolutePosition
+			entry.DragOffset = getMousePosition() - Vector2.new(frame.Position.X.Offset, frame.Position.Y.Offset)
 			input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					entry.Dragging = false
@@ -4015,6 +4113,9 @@ function Amphibia.Notify(config)
 	end
 
 	UIS.InputChanged:Connect(function(input)
+		if LibraryDestroyed then
+			return
+		end
 		if entry.Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			local mousePos = getMousePosition()
 			frame.Position = UDim2.fromOffset(mousePos.X - entry.DragOffset.X, mousePos.Y - entry.DragOffset.Y)
@@ -4038,7 +4139,14 @@ local function tryBindControl(control)
 	elseif control == DemoControls.colorPicker then
 		Amphibia.BindColorPicker(control, {Default = control.ColorPreview.BackgroundColor3})
 	elseif control == DemoControls.dropdown then
-		Amphibia.BindDropdown(control, {Title = "dropdown"})
+		Amphibia.BindDropdown(control, {
+			Title = "dropdown",
+			Items = {
+				{Text = "option 1", Value = "option 1"},
+				{Text = "option 2", Value = "option 2"},
+				{Text = "option 3", Value = "option 3"},
+			}
+		})
 	end
 end
 
