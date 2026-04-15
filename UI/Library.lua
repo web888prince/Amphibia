@@ -1957,59 +1957,64 @@ local function buildNotificationsAndDemo(NotificationsGui, TABS_TabsBg, MAIN_Tab
     }
 end
 
-local _rootRefs = buildRootGuis()
-local MainGui = _rootRefs.MainGui
-local ColorPickerGui = _rootRefs.ColorPickerGui
-local NotificationsGui = _rootRefs.NotificationsGui
+local UI = {}
+local DemoControls = {}
 
-local _mainRefs = buildMainWindow(MainGui)
-local MAIN_MainBgFrame = _mainRefs.MAIN_MainBgFrame
-local MAIN_TabsContentFolder = _mainRefs.MAIN_TabsContentFolder
-local MAIN_MainDarkFrame = _mainRefs.MAIN_MainDarkFrame
-local MAIN_SearchFrame = _mainRefs.MAIN_SearchFrame
-local MAIN_SearchFrameSearchImage = _mainRefs.MAIN_SearchFrameSearchImage
-local MAIN_SearchFrameTextBox = _mainRefs.MAIN_SearchFrameTextBox
-local MAIN_HeaderBgFrame = _mainRefs.MAIN_HeaderBgFrame
-local MAIN_CloseButton = _mainRefs.MAIN_CloseButton
-local MAIN_SettingsButton = _mainRefs.MAIN_SettingsButton
-local TABS_TabsBg = _mainRefs.TABS_TabsBg
+do
+	local _rootRefs = buildRootGuis()
+	UI.MainGui = _rootRefs.MainGui
+	UI.ColorPickerGui = _rootRefs.ColorPickerGui
+	UI.NotificationsGui = _rootRefs.NotificationsGui
 
-local _colorRefs = buildColorPickerWindow(ColorPickerGui)
-local COLORPICKER_MainFrame = _colorRefs.COLORPICKER_MainFrame
-local COLORPICKER_ColorPickerMainFrame = _colorRefs.COLORPICKER_ColorPickerMainFrame
-local COLORPICKER_ColorPickerMainFrameDot = _colorRefs.COLORPICKER_ColorPickerMainFrameDot
-local COLORPICKER_LastColorLastColor1 = _colorRefs.COLORPICKER_LastColorLastColor1
-local COLORPICKER_LastColorLastColor2 = _colorRefs.COLORPICKER_LastColorLastColor2
-local COLORPICKER_LastColorLastColor3 = _colorRefs.COLORPICKER_LastColorLastColor3
-local COLORPICKER_LastColorLastColor4 = _colorRefs.COLORPICKER_LastColorLastColor4
-local COLORPICKER_LastColorLastColor5 = _colorRefs.COLORPICKER_LastColorLastColor5
-local COLORPICKER_CurrentColorFrame = _colorRefs.COLORPICKER_CurrentColorFrame
-local COLORPICKER_ColorSelectorFrame = _colorRefs.COLORPICKER_ColorSelectorFrame
-local COLORPICKER_ColorSelectorFrameGradient = _colorRefs.COLORPICKER_ColorSelectorFrameGradient
-local COLORPICKER_ColorSelectorFrameSelectLine = _colorRefs.COLORPICKER_ColorSelectorFrameSelectLine
-local COLORPICKER_HeaderBgFrame = _colorRefs.COLORPICKER_HeaderBgFrame
-local COLORPICKER_CloseButton = _colorRefs.COLORPICKER_CloseButton
-local COLORPICKER_MoveBackButton = _colorRefs.COLORPICKER_MoveBackButton
-local COLORPICKER_MoveForwardButton = _colorRefs.COLORPICKER_MoveForwardButton
-local COLORPICKER_RandomColor = _colorRefs.COLORPICKER_RandomColor
-local COLORPICKER_ResetToDefault = _colorRefs.COLORPICKER_ResetToDefault
-local COLORPICKER_WindowDesc = _colorRefs.COLORPICKER_WindowDesc
-local COLORPICKER_RInput = _colorRefs.COLORPICKER_RInput
-local COLORPICKER_GInput = _colorRefs.COLORPICKER_GInput
-local COLORPICKER_BInput = _colorRefs.COLORPICKER_BInput
-local COLORPICKER_HInput = _colorRefs.COLORPICKER_HInput
-local COLORPICKER_SInput = _colorRefs.COLORPICKER_SInput
-local COLORPICKER_VInput = _colorRefs.COLORPICKER_VInput
+	local _mainRefs = buildMainWindow(UI.MainGui)
+	UI.MAIN_MainBgFrame = _mainRefs.MAIN_MainBgFrame
+	UI.MAIN_TabsContentFolder = _mainRefs.MAIN_TabsContentFolder
+	UI.MAIN_MainDarkFrame = _mainRefs.MAIN_MainDarkFrame
+	UI.MAIN_SearchFrame = _mainRefs.MAIN_SearchFrame
+	UI.MAIN_SearchFrameSearchImage = _mainRefs.MAIN_SearchFrameSearchImage
+	UI.MAIN_SearchFrameTextBox = _mainRefs.MAIN_SearchFrameTextBox
+	UI.MAIN_HeaderBgFrame = _mainRefs.MAIN_HeaderBgFrame
+	UI.MAIN_CloseButton = _mainRefs.MAIN_CloseButton
+	UI.MAIN_SettingsButton = _mainRefs.MAIN_SettingsButton
+	UI.TABS_TabsBg = _mainRefs.TABS_TabsBg
 
-local _notificationRefs = buildNotificationsAndDemo(NotificationsGui, TABS_TabsBg, MAIN_TabsContentFolder)
-local NOTIFICATIONS_MainFrame = _notificationRefs.NOTIFICATIONS_MainFrame
-local button = _notificationRefs.button
-local dropdown = _notificationRefs.dropdown
-local toggle = _notificationRefs.toggle
-local colorPicker = _notificationRefs.colorPicker
-local textbox = _notificationRefs.textbox
-local slider = _notificationRefs.slider
-local keybind = _notificationRefs.keybind
+	local _colorRefs = buildColorPickerWindow(UI.ColorPickerGui)
+	UI.COLORPICKER_MainFrame = _colorRefs.COLORPICKER_MainFrame
+	UI.COLORPICKER_ColorPickerMainFrame = _colorRefs.COLORPICKER_ColorPickerMainFrame
+	UI.COLORPICKER_ColorPickerMainFrameDot = _colorRefs.COLORPICKER_ColorPickerMainFrameDot
+	UI.COLORPICKER_LastColorLastColor1 = _colorRefs.COLORPICKER_LastColorLastColor1
+	UI.COLORPICKER_LastColorLastColor2 = _colorRefs.COLORPICKER_LastColorLastColor2
+	UI.COLORPICKER_LastColorLastColor3 = _colorRefs.COLORPICKER_LastColorLastColor3
+	UI.COLORPICKER_LastColorLastColor4 = _colorRefs.COLORPICKER_LastColorLastColor4
+	UI.COLORPICKER_LastColorLastColor5 = _colorRefs.COLORPICKER_LastColorLastColor5
+	UI.COLORPICKER_CurrentColorFrame = _colorRefs.COLORPICKER_CurrentColorFrame
+	UI.COLORPICKER_ColorSelectorFrame = _colorRefs.COLORPICKER_ColorSelectorFrame
+	UI.COLORPICKER_ColorSelectorFrameGradient = _colorRefs.COLORPICKER_ColorSelectorFrameGradient
+	UI.COLORPICKER_ColorSelectorFrameSelectLine = _colorRefs.COLORPICKER_ColorSelectorFrameSelectLine
+	UI.COLORPICKER_HeaderBgFrame = _colorRefs.COLORPICKER_HeaderBgFrame
+	UI.COLORPICKER_CloseButton = _colorRefs.COLORPICKER_CloseButton
+	UI.COLORPICKER_MoveBackButton = _colorRefs.COLORPICKER_MoveBackButton
+	UI.COLORPICKER_MoveForwardButton = _colorRefs.COLORPICKER_MoveForwardButton
+	UI.COLORPICKER_RandomColor = _colorRefs.COLORPICKER_RandomColor
+	UI.COLORPICKER_ResetToDefault = _colorRefs.COLORPICKER_ResetToDefault
+	UI.COLORPICKER_WindowDesc = _colorRefs.COLORPICKER_WindowDesc
+	UI.COLORPICKER_RInput = _colorRefs.COLORPICKER_RInput
+	UI.COLORPICKER_GInput = _colorRefs.COLORPICKER_GInput
+	UI.COLORPICKER_BInput = _colorRefs.COLORPICKER_BInput
+	UI.COLORPICKER_HInput = _colorRefs.COLORPICKER_HInput
+	UI.COLORPICKER_SInput = _colorRefs.COLORPICKER_SInput
+	UI.COLORPICKER_VInput = _colorRefs.COLORPICKER_VInput
+
+	local _notificationRefs = buildNotificationsAndDemo(UI.NotificationsGui, UI.TABS_TabsBg, UI.MAIN_TabsContentFolder)
+	UI.NOTIFICATIONS_MainFrame = _notificationRefs.NOTIFICATIONS_MainFrame
+	DemoControls.button = _notificationRefs.button
+	DemoControls.dropdown = _notificationRefs.dropdown
+	DemoControls.toggle = _notificationRefs.toggle
+	DemoControls.colorPicker = _notificationRefs.colorPicker
+	DemoControls.textbox = _notificationRefs.textbox
+	DemoControls.slider = _notificationRefs.slider
+	DemoControls.keybind = _notificationRefs.keybind
+end
 --───────────────|> Functional layer
 --──────────────────────────────────────────────────--
 
@@ -2046,9 +2051,9 @@ local function fadeOutGuiTree(root, duration)
 	end
 end
 
-MainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ColorPickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-NotificationsGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+UI.MainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+UI.ColorPickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+UI.NotificationsGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local Amphibia = {}
 
@@ -2301,32 +2306,32 @@ local function animateLabelButton(button, baseColor, hoverColor)
 	end)
 end
 
-local mainScale = createScale(MAIN_MainBgFrame, 0.97)
-local pickerScale = createScale(COLORPICKER_MainFrame, 0.97)
+local mainScale = createScale(UI.MAIN_MainBgFrame, 0.97)
+local pickerScale = createScale(UI.COLORPICKER_MainFrame, 0.97)
 
-MAIN_MainBgFrame.BackgroundTransparency = 1
-COLORPICKER_MainFrame.BackgroundTransparency = 1
-MAIN_MainDarkFrame.BackgroundTransparency = 1
-ColorPickerGui.Enabled = false
+UI.MAIN_MainBgFrame.BackgroundTransparency = 1
+UI.COLORPICKER_MainFrame.BackgroundTransparency = 1
+UI.MAIN_MainDarkFrame.BackgroundTransparency = 1
+UI.ColorPickerGui.Enabled = false
 
-animateIconButton(MAIN_CloseButton, 0.84, 0.58)
-animateIconButton(MAIN_SettingsButton, 0.84, 0.58)
-animateIconButton(COLORPICKER_CloseButton, 0.84, 0.58)
-animateIconButton(COLORPICKER_MoveBackButton, 0.25, 0.05)
-animateIconButton(COLORPICKER_MoveForwardButton, 0.25, 0.05)
-animateIconButton(COLORPICKER_RandomColor, 0.25, 0.05)
-animateIconButton(COLORPICKER_ResetToDefault, 0.25, 0.05)
+animateIconButton(UI.MAIN_CloseButton, 0.84, 0.58)
+animateIconButton(UI.MAIN_SettingsButton, 0.84, 0.58)
+animateIconButton(UI.COLORPICKER_CloseButton, 0.84, 0.58)
+animateIconButton(UI.COLORPICKER_MoveBackButton, 0.25, 0.05)
+animateIconButton(UI.COLORPICKER_MoveForwardButton, 0.25, 0.05)
+animateIconButton(UI.COLORPICKER_RandomColor, 0.25, 0.05)
+animateIconButton(UI.COLORPICKER_ResetToDefault, 0.25, 0.05)
 
-makeDraggable(MAIN_HeaderBgFrame, MAIN_MainBgFrame)
-makeDraggable(COLORPICKER_HeaderBgFrame, COLORPICKER_MainFrame)
+makeDraggable(UI.MAIN_HeaderBgFrame, UI.MAIN_MainBgFrame)
+makeDraggable(UI.COLORPICKER_HeaderBgFrame, UI.COLORPICKER_MainFrame)
 
 local function openMainMenuInstant()
-	MainGui.Enabled = true
-	MAIN_MainDarkFrame.BackgroundTransparency = 1
-	MAIN_MainBgFrame.BackgroundTransparency = 1
+	UI.MainGui.Enabled = true
+	UI.MAIN_MainDarkFrame.BackgroundTransparency = 1
+	UI.MAIN_MainBgFrame.BackgroundTransparency = 1
 	mainScale.Scale = 0.97
-	tween(MAIN_MainDarkFrame, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.35})
-	tween(MAIN_MainBgFrame, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
+	tween(UI.MAIN_MainDarkFrame, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.35})
+	tween(UI.MAIN_MainBgFrame, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
 	tween(mainScale, OPEN_TWEEN, {Scale = 1})
 end
 
@@ -2334,7 +2339,7 @@ openMainMenuInstant()
 
 local ConfirmRoot = Instance.new("Frame")
 ConfirmRoot.Name = "ConfirmRoot"
-ConfirmRoot.Parent = MainGui
+ConfirmRoot.Parent = UI.MainGui
 ConfirmRoot.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 ConfirmRoot.BackgroundTransparency = 1
 ConfirmRoot.BorderSizePixel = 0
@@ -2523,19 +2528,19 @@ end
 ConfirmNo.MouseButton1Click:Connect(hideConfirm)
 ConfirmYes.MouseButton1Click:Connect(function()
 	hideConfirm()
-	ColorPickerGui.Enabled = false
-	tween(MAIN_MainDarkFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
-	tween(MAIN_MainBgFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
+	UI.ColorPickerGui.Enabled = false
+	tween(UI.MAIN_MainDarkFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
+	tween(UI.MAIN_MainBgFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
 	tween(mainScale, CLOSE_TWEEN, {Scale = 0.97})
 	task.delay(0.22, function()
-		MainGui.Enabled = false
+		UI.MainGui.Enabled = false
 	end)
 end)
-MAIN_CloseButton.MouseButton1Click:Connect(showConfirm)
+UI.MAIN_CloseButton.MouseButton1Click:Connect(showConfirm)
 
 local DropdownRoot = Instance.new("Frame")
 DropdownRoot.Name = "DropdownRoot"
-DropdownRoot.Parent = MainGui
+DropdownRoot.Parent = UI.MainGui
 DropdownRoot.BackgroundTransparency = 1
 DropdownRoot.Size = UDim2.fromScale(1, 1)
 DropdownRoot.ZIndex = 250
@@ -2932,14 +2937,14 @@ local colorSelectorRainbow = ColorSequence.new{
 	ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
 	ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
 }
-COLORPICKER_ColorSelectorFrameGradient.Color = colorSelectorRainbow
-COLORPICKER_ColorPickerMainFrame.ClipsDescendants = true
-COLORPICKER_ColorPickerMainFrame.Active = true
-COLORPICKER_ColorSelectorFrame.Active = true
+UI.COLORPICKER_ColorSelectorFrameGradient.Color = colorSelectorRainbow
+UI.COLORPICKER_ColorPickerMainFrame.ClipsDescendants = true
+UI.COLORPICKER_ColorPickerMainFrame.Active = true
+UI.COLORPICKER_ColorSelectorFrame.Active = true
 
 local CP_SatOverlay = Instance.new("Frame")
 CP_SatOverlay.Name = "SatOverlay"
-CP_SatOverlay.Parent = COLORPICKER_ColorPickerMainFrame
+CP_SatOverlay.Parent = UI.COLORPICKER_ColorPickerMainFrame
 CP_SatOverlay.BackgroundColor3 = Color3.fromRGB(255,255,255)
 CP_SatOverlay.BorderSizePixel = 0
 CP_SatOverlay.Size = UDim2.fromScale(1, 1)
@@ -2955,7 +2960,7 @@ CP_SatGradient.Parent = CP_SatOverlay
 
 local CP_ValueOverlay = Instance.new("Frame")
 CP_ValueOverlay.Name = "ValueOverlay"
-CP_ValueOverlay.Parent = COLORPICKER_ColorPickerMainFrame
+CP_ValueOverlay.Parent = UI.COLORPICKER_ColorPickerMainFrame
 CP_ValueOverlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
 CP_ValueOverlay.BorderSizePixel = 0
 CP_ValueOverlay.Size = UDim2.fromScale(1, 1)
@@ -2982,11 +2987,11 @@ local colorPickerState = {
 
 local function recolorLastColorFrames()
 	local frames = {
-		COLORPICKER_LastColorLastColor1,
-		COLORPICKER_LastColorLastColor2,
-		COLORPICKER_LastColorLastColor3,
-		COLORPICKER_LastColorLastColor4,
-		COLORPICKER_LastColorLastColor5,
+		UI.COLORPICKER_LastColorLastColor1,
+		UI.COLORPICKER_LastColorLastColor2,
+		UI.COLORPICKER_LastColorLastColor3,
+		UI.COLORPICKER_LastColorLastColor4,
+		UI.COLORPICKER_LastColorLastColor5,
 	}
 
 	for index, frame in ipairs(frames) do
@@ -3035,12 +3040,12 @@ local function updateColorFields()
 	local h = math.floor(colorPickerState.Hue * 360 + 0.5)
 	local s = math.floor(colorPickerState.Sat * 100 + 0.5)
 	local v = math.floor(colorPickerState.Val * 100 + 0.5)
-	if COLORPICKER_RInput then COLORPICKER_RInput.Text = tostring(r) end
-	if COLORPICKER_GInput then COLORPICKER_GInput.Text = tostring(g) end
-	if COLORPICKER_BInput then COLORPICKER_BInput.Text = tostring(b) end
-	if COLORPICKER_HInput then COLORPICKER_HInput.Text = tostring(h) end
-	if COLORPICKER_SInput then COLORPICKER_SInput.Text = tostring(s) end
-	if COLORPICKER_VInput then COLORPICKER_VInput.Text = tostring(v) end
+	if UI.COLORPICKER_RInput then UI.COLORPICKER_RInput.Text = tostring(r) end
+	if UI.COLORPICKER_GInput then UI.COLORPICKER_GInput.Text = tostring(g) end
+	if UI.COLORPICKER_BInput then UI.COLORPICKER_BInput.Text = tostring(b) end
+	if UI.COLORPICKER_HInput then UI.COLORPICKER_HInput.Text = tostring(h) end
+	if UI.COLORPICKER_SInput then UI.COLORPICKER_SInput.Text = tostring(s) end
+	if UI.COLORPICKER_VInput then UI.COLORPICKER_VInput.Text = tostring(v) end
 	colorFieldsGuard = false
 end
 
@@ -3049,15 +3054,15 @@ local function applyInputsToColor(kind)
 		return
 	end
 	if kind == "RGB" then
-		local r = math.clamp(tonumber(COLORPICKER_RInput.Text) or 0, 0, 255)
-		local g = math.clamp(tonumber(COLORPICKER_GInput.Text) or 0, 0, 255)
-		local b = math.clamp(tonumber(COLORPICKER_BInput.Text) or 0, 0, 255)
+		local r = math.clamp(tonumber(UI.COLORPICKER_RInput.Text) or 0, 0, 255)
+		local g = math.clamp(tonumber(UI.COLORPICKER_GInput.Text) or 0, 0, 255)
+		local b = math.clamp(tonumber(UI.COLORPICKER_BInput.Text) or 0, 0, 255)
 		syncColorPickerFromColor(Color3.fromRGB(r, g, b))
 		commitCurrentColor(true)
 	else
-		local h = math.clamp(tonumber(COLORPICKER_HInput.Text) or 0, 0, 360) / 360
-		local s = math.clamp(tonumber(COLORPICKER_SInput.Text) or 0, 0, 100) / 100
-		local v = math.clamp(tonumber(COLORPICKER_VInput.Text) or 0, 0, 100) / 100
+		local h = math.clamp(tonumber(UI.COLORPICKER_HInput.Text) or 0, 0, 360) / 360
+		local s = math.clamp(tonumber(UI.COLORPICKER_SInput.Text) or 0, 0, 100) / 100
+		local v = math.clamp(tonumber(UI.COLORPICKER_VInput.Text) or 0, 0, 100) / 100
 		colorPickerState.Hue = h
 		colorPickerState.Sat = s
 		colorPickerState.Val = v
@@ -3069,10 +3074,10 @@ end
 updateColorPickerVisuals = function()
 	local hueColor = Color3.fromHSV(colorPickerState.Hue, 1, 1)
 	local color = Color3.fromHSV(colorPickerState.Hue, colorPickerState.Sat, colorPickerState.Val)
-	COLORPICKER_ColorPickerMainFrame.BackgroundColor3 = hueColor
-	COLORPICKER_CurrentColorFrame.BackgroundColor3 = color
-	tween(COLORPICKER_ColorPickerMainFrameDot, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(colorPickerState.Sat, 0, 1 - colorPickerState.Val, 0)})
-	tween(COLORPICKER_ColorSelectorFrameSelectLine, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, colorPickerState.Hue, 0)})
+	UI.COLORPICKER_ColorPickerMainFrame.BackgroundColor3 = hueColor
+	UI.COLORPICKER_CurrentColorFrame.BackgroundColor3 = color
+	tween(UI.COLORPICKER_ColorPickerMainFrameDot, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(colorPickerState.Sat, 0, 1 - colorPickerState.Val, 0)})
+	tween(UI.COLORPICKER_ColorSelectorFrameSelectLine, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, colorPickerState.Hue, 0)})
 	updateColorFields()
 end
 
@@ -3104,7 +3109,7 @@ local function applyColorToBinding(binding, color, pushHistory)
 	if preview then
 		preview.BackgroundColor3 = color
 	end
-	COLORPICKER_CurrentColorFrame.BackgroundColor3 = color
+	UI.COLORPICKER_CurrentColorFrame.BackgroundColor3 = color
 	if pushHistory then
 		pushColorHistory(binding, color)
 		pushRecentColor(color)
@@ -3127,7 +3132,7 @@ local function setActivePicker(binding)
 	if not binding then
 		return
 	end
-	COLORPICKER_WindowDesc.Text = "from: " .. ((binding.Button and binding.Button:FindFirstChild("NameText") and binding.Button.NameText.Text) or "nil")
+	UI.COLORPICKER_WindowDesc.Text = "from: " .. ((binding.Button and binding.Button:FindFirstChild("NameText") and binding.Button.NameText.Text) or "nil")
 	syncColorPickerFromColor(binding.Value or Color3.new(1,1,1))
 	updateColorPickerVisuals()
 end
@@ -3137,24 +3142,24 @@ local function openColorPicker(binding)
 		return
 	end
 	setActivePicker(binding)
-	ColorPickerGui.Enabled = true
-	COLORPICKER_MainFrame.BackgroundTransparency = 1
+	UI.ColorPickerGui.Enabled = true
+	UI.COLORPICKER_MainFrame.BackgroundTransparency = 1
 	pickerScale.Scale = 0.97
-	tween(COLORPICKER_MainFrame, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
+	tween(UI.COLORPICKER_MainFrame, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
 	tween(pickerScale, OPEN_TWEEN, {Scale = 1})
 end
 
 local function closeColorPicker()
-	if not ColorPickerGui.Enabled then
+	if not UI.ColorPickerGui.Enabled then
 		return
 	end
 	if colorPickerActiveBinding then
 		pushRecentColor(colorPickerActiveBinding.Value)
 	end
-	tween(COLORPICKER_MainFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
+	tween(UI.COLORPICKER_MainFrame, CLOSE_TWEEN, {BackgroundTransparency = 1})
 	tween(pickerScale, CLOSE_TWEEN, {Scale = 0.97})
 	task.delay(0.22, function()
-		ColorPickerGui.Enabled = false
+		UI.ColorPickerGui.Enabled = false
 	end)
 end
 
@@ -3170,8 +3175,8 @@ commitCurrentColor = function(pushHistory)
 end
 
 local function updateSquareFromMouse(mousePosition)
-	local pos = COLORPICKER_ColorPickerMainFrame.AbsolutePosition
-	local size = COLORPICKER_ColorPickerMainFrame.AbsoluteSize
+	local pos = UI.COLORPICKER_ColorPickerMainFrame.AbsolutePosition
+	local size = UI.COLORPICKER_ColorPickerMainFrame.AbsoluteSize
 	colorPickerState.Sat = clamp((mousePosition.X - pos.X) / size.X, 0, 1)
 	colorPickerState.Val = 1 - clamp((mousePosition.Y - pos.Y) / size.Y, 0, 1)
 	updateColorPickerVisuals()
@@ -3179,14 +3184,14 @@ local function updateSquareFromMouse(mousePosition)
 end
 
 local function updateHueFromMouse(mousePosition)
-	local pos = COLORPICKER_ColorSelectorFrame.AbsolutePosition
-	local size = COLORPICKER_ColorSelectorFrame.AbsoluteSize
+	local pos = UI.COLORPICKER_ColorSelectorFrame.AbsolutePosition
+	local size = UI.COLORPICKER_ColorSelectorFrame.AbsoluteSize
 	colorPickerState.Hue = clamp((mousePosition.Y - pos.Y) / size.Y, 0, 1)
 	updateColorPickerVisuals()
 	commitCurrentColor(false)
 end
 
-COLORPICKER_ColorPickerMainFrame.InputBegan:Connect(function(input)
+UI.COLORPICKER_ColorPickerMainFrame.InputBegan:Connect(function(input)
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 		return
 	end
@@ -3194,7 +3199,7 @@ COLORPICKER_ColorPickerMainFrame.InputBegan:Connect(function(input)
 	updateSquareFromMouse(getMousePosition())
 end)
 
-COLORPICKER_ColorSelectorFrame.InputBegan:Connect(function(input)
+UI.COLORPICKER_ColorSelectorFrame.InputBegan:Connect(function(input)
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 		return
 	end
@@ -3225,7 +3230,7 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
-for _, frame in ipairs({COLORPICKER_LastColorLastColor1, COLORPICKER_LastColorLastColor2, COLORPICKER_LastColorLastColor3, COLORPICKER_LastColorLastColor4, COLORPICKER_LastColorLastColor5}) do
+for _, frame in ipairs({UI.COLORPICKER_LastColorLastColor1, UI.COLORPICKER_LastColorLastColor2, UI.COLORPICKER_LastColorLastColor3, UI.COLORPICKER_LastColorLastColor4, UI.COLORPICKER_LastColorLastColor5}) do
 	frame.Active = true
 	frame.InputBegan:Connect(function(input)
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
@@ -3239,20 +3244,20 @@ for _, frame in ipairs({COLORPICKER_LastColorLastColor1, COLORPICKER_LastColorLa
 	end)
 end
 
-COLORPICKER_CloseButton.MouseButton1Click:Connect(closeColorPicker)
-COLORPICKER_ResetToDefault.MouseButton1Click:Connect(function()
+UI.COLORPICKER_CloseButton.MouseButton1Click:Connect(closeColorPicker)
+UI.COLORPICKER_ResetToDefault.MouseButton1Click:Connect(function()
 	if not colorPickerActiveBinding then
 		return
 	end
 	syncColorPickerFromColor(colorPickerActiveBinding.Default or Color3.new(1,1,1))
 	commitCurrentColor(true)
 end)
-COLORPICKER_RandomColor.MouseButton1Click:Connect(function()
+UI.COLORPICKER_RandomColor.MouseButton1Click:Connect(function()
 	local color = Color3.fromHSV(math.random(), 0.75 + math.random() * 0.25, 0.75 + math.random() * 0.25)
 	syncColorPickerFromColor(color)
 	commitCurrentColor(true)
 end)
-COLORPICKER_MoveBackButton.MouseButton1Click:Connect(function()
+UI.COLORPICKER_MoveBackButton.MouseButton1Click:Connect(function()
 	local binding = colorPickerActiveBinding
 	if not binding or not binding.History or (binding.HistoryIndex or 0) <= 1 then
 		return
@@ -3264,7 +3269,7 @@ COLORPICKER_MoveBackButton.MouseButton1Click:Connect(function()
 		applyColorToBinding(binding, color, false)
 	end
 end)
-COLORPICKER_MoveForwardButton.MouseButton1Click:Connect(function()
+UI.COLORPICKER_MoveForwardButton.MouseButton1Click:Connect(function()
 	local binding = colorPickerActiveBinding
 	if not binding or not binding.History or (binding.HistoryIndex or 0) >= #binding.History then
 		return
@@ -3278,7 +3283,7 @@ COLORPICKER_MoveForwardButton.MouseButton1Click:Connect(function()
 end)
 
 
-for _, box in ipairs({COLORPICKER_RInput, COLORPICKER_GInput, COLORPICKER_BInput}) do
+for _, box in ipairs({UI.COLORPICKER_RInput, UI.COLORPICKER_GInput, UI.COLORPICKER_BInput}) do
 	if box then
 		box.FocusLost:Connect(function()
 			applyInputsToColor("RGB")
@@ -3286,7 +3291,7 @@ for _, box in ipairs({COLORPICKER_RInput, COLORPICKER_GInput, COLORPICKER_BInput
 	end
 end
 
-for _, box in ipairs({COLORPICKER_HInput, COLORPICKER_SInput, COLORPICKER_VInput}) do
+for _, box in ipairs({UI.COLORPICKER_HInput, UI.COLORPICKER_SInput, UI.COLORPICKER_VInput}) do
 	if box then
 		box.FocusLost:Connect(function()
 			applyInputsToColor("HSV")
@@ -3631,9 +3636,9 @@ local currentTabContent = nil
 
 local function collectTabPairs()
 	table.clear(tabData)
-	for _, object in ipairs(TABS_TabsBg:GetDescendants()) do
+	for _, object in ipairs(UI.TABS_TabsBg:GetDescendants()) do
 		if object:IsA("TextButton") then
-			local scrolling = MAIN_TabsContentFolder:FindFirstChild(object.Name .. "TabContent")
+			local scrolling = UI.MAIN_TabsContentFolder:FindFirstChild(object.Name .. "TabContent")
 			if scrolling then
 				table.insert(tabData, {Button = object, Content = scrolling})
 			end
@@ -3732,18 +3737,18 @@ local function searchInTab(scrolling, query)
 	return tabHasResults
 end
 
-MAIN_SearchFrameTextBox.Focused:Connect(function()
-	tween(MAIN_SearchFrame, DEFAULT_TWEEN, {BackgroundColor3 = Color3.fromRGB(35,35,35)})
-	tween(MAIN_SearchFrameSearchImage, DEFAULT_TWEEN, {ImageTransparency = 0.32})
+UI.MAIN_SearchFrameTextBox.Focused:Connect(function()
+	tween(UI.MAIN_SearchFrame, DEFAULT_TWEEN, {BackgroundColor3 = Color3.fromRGB(35,35,35)})
+	tween(UI.MAIN_SearchFrameSearchImage, DEFAULT_TWEEN, {ImageTransparency = 0.32})
 end)
 
-MAIN_SearchFrameTextBox.FocusLost:Connect(function()
-	tween(MAIN_SearchFrame, DEFAULT_TWEEN, {BackgroundColor3 = Color3.fromRGB(255,255,255)})
-	tween(MAIN_SearchFrameSearchImage, DEFAULT_TWEEN, {ImageTransparency = 0.6})
+UI.MAIN_SearchFrameTextBox.FocusLost:Connect(function()
+	tween(UI.MAIN_SearchFrame, DEFAULT_TWEEN, {BackgroundColor3 = Color3.fromRGB(255,255,255)})
+	tween(UI.MAIN_SearchFrameSearchImage, DEFAULT_TWEEN, {ImageTransparency = 0.6})
 end)
 
-MAIN_SearchFrameTextBox:GetPropertyChangedSignal("Text"):Connect(function()
-	local query = string.lower(MAIN_SearchFrameTextBox.Text)
+UI.MAIN_SearchFrameTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+	local query = string.lower(UI.MAIN_SearchFrameTextBox.Text)
 	local firstMatchButton = nil
 	for _, info in ipairs(tabData) do
 		local hasResults = searchInTab(info.Content, query)
@@ -3760,7 +3765,7 @@ MAIN_SearchFrameTextBox:GetPropertyChangedSignal("Text"):Connect(function()
 	end
 end)
 
-MAIN_SettingsButton.MouseButton1Click:Connect(function()
+UI.MAIN_SettingsButton.MouseButton1Click:Connect(function()
 	if Amphibia.Notify then
 		Amphibia.Notify({
 			Title = "Settings",
@@ -3770,10 +3775,10 @@ MAIN_SettingsButton.MouseButton1Click:Connect(function()
 	end
 end)
 
-NOTIFICATIONS_MainFrame.Visible = false
-NOTIFICATIONS_MainFrame.Parent = NotificationsGui
-NOTIFICATIONS_MainFrame.AnchorPoint = Vector2.zero
-NOTIFICATIONS_MainFrame.Position = UDim2.fromOffset(-1000, -1000)
+UI.NOTIFICATIONS_MainFrame.Visible = false
+UI.NOTIFICATIONS_MainFrame.Parent = UI.NotificationsGui
+UI.NOTIFICATIONS_MainFrame.AnchorPoint = Vector2.zero
+UI.NOTIFICATIONS_MainFrame.Position = UDim2.fromOffset(-1000, -1000)
 
 local notificationScaleCache = setmetatable({}, {__mode = "k"})
 local notifications = {}
@@ -3884,9 +3889,9 @@ function Amphibia.Notify(config)
 	config = config or {}
 	createNotificationRenderLoop()
 
-	local frame = NOTIFICATIONS_MainFrame:Clone()
+	local frame = UI.NOTIFICATIONS_MainFrame:Clone()
 	frame.Visible = true
-	frame.Parent = NotificationsGui
+	frame.Parent = UI.NotificationsGui
 	frame.Name = GenerateRandomName(8)
 	frame.Position = UDim2.fromOffset(getViewportSize().X + 30, getViewportSize().Y - frame.Size.Y.Offset - 20)
 
@@ -4020,24 +4025,24 @@ function Amphibia.Notify(config)
 end
 
 local function tryBindControl(control)
-	if control == button then
+	if control == DemoControls.button then
 		Amphibia.BindButton(control, {})
-	elseif control == toggle then
+	elseif control == DemoControls.toggle then
 		Amphibia.BindToggle(control, {})
-	elseif control == textbox then
+	elseif control == DemoControls.textbox then
 		Amphibia.BindTextbox(control, {})
-	elseif control == slider then
+	elseif control == DemoControls.slider then
 		Amphibia.BindSlider(control, {Min = 0, Max = 100, Step = 1, Default = 0})
-	elseif control == keybind then
+	elseif control == DemoControls.keybind then
 		Amphibia.BindKeybind(control, {})
-	elseif control == colorPicker then
+	elseif control == DemoControls.colorPicker then
 		Amphibia.BindColorPicker(control, {Default = control.ColorPreview.BackgroundColor3})
-	elseif control == dropdown then
+	elseif control == DemoControls.dropdown then
 		Amphibia.BindDropdown(control, {Title = "dropdown"})
 	end
 end
 
-for _, control in ipairs({button, dropdown, toggle, colorPicker, textbox, slider, keybind}) do
+for _, control in ipairs({DemoControls.button, DemoControls.dropdown, DemoControls.toggle, DemoControls.colorPicker, DemoControls.textbox, DemoControls.slider, DemoControls.keybind}) do
 	tryBindControl(control)
 end
 
