@@ -3624,4 +3624,4 @@ function Amphibia.Boot()
 	return Amphibia
 end
 
--- return Amphibia
+return Amphibia
