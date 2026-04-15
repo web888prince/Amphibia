@@ -37,6 +37,8 @@ local _tripleDotImageId = "rbxassetid://127075876244307"
 --──────────────────|> Functions
 --──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────--
 
+local ui = {}
+
 local function GenerateRandomName(length)
 	length = tonumber(length) or 10
 
@@ -1739,3 +1741,5 @@ local slider = createSlider("slider", section2)
 local keybind = createKeybind("keybind", section2, "H")
 
 tab1Scrolling.Visible = true
+
+return ui
