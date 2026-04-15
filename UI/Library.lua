@@ -1979,6 +1979,8 @@ local function buildNotificationsAndDemo(NotificationsGui, TABS_TabsBg, MAIN_Tab
 end
 
 local _rootRefs = buildRootGuis()
+
+local function createAmphibia()
 local MainGui = _rootRefs.MainGui
 local ColorPickerGui = _rootRefs.ColorPickerGui
 local NotificationsGui = _rootRefs.NotificationsGui
@@ -4082,4 +4084,6 @@ function Amphibia.Boot()
 	return Amphibia
 end
 
-return Amphibia
+end
+
+return createAmphibia()
