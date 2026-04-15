@@ -1978,9 +1978,8 @@ local function buildNotificationsAndDemo(NotificationsGui, TABS_TabsBg, MAIN_Tab
     }
 end
 
-local _rootRefs = buildRootGuis()
-
 local function createAmphibia()
+local _rootRefs = buildRootGuis()
 local MainGui = _rootRefs.MainGui
 local ColorPickerGui = _rootRefs.ColorPickerGui
 local NotificationsGui = _rootRefs.NotificationsGui
@@ -2145,8 +2144,8 @@ local function setFrameTopLeft(frame, topLeft)
 	local size = frame.AbsoluteSize
 	local anchor = frame.AnchorPoint
 	frame.Position = UDim2.fromOffset(
-		math.floor(topLeft.X + (size.X * anchor.X) + 0.5),
-		math.floor(topLeft.Y + (size.Y * anchor.Y) + 0.5)
+		topLeft.X + (size.X * anchor.X),
+		topLeft.Y + (size.Y * anchor.Y)
 	)
 end
 
@@ -2181,16 +2180,23 @@ end
 local dragRegistry = {}
 
 RunService.RenderStepped:Connect(function(dt)
-	local alpha = math.clamp(dt * 18, 0, 1)
 	for _, data in pairs(dragRegistry) do
-		if data.Frame and data.Frame.Parent then
-			local current = data.Frame.AbsolutePosition
-			local target = data.Target
-			local nextTopLeft = Vector2.new(
-				current.X + ((target.X) - current.X) * alpha,
-				current.Y + ((target.Y) - current.Y) * alpha
+		if data.Frame and data.Frame.Parent and data.Target then
+			if not data.Current then
+				data.Current = Vector2.new(data.Target.X, data.Target.Y)
+			end
+
+			local alpha = data.Dragging and 1 or math.clamp(dt * 18, 0, 1)
+			data.Current = Vector2.new(
+				data.Current.X + (data.Target.X - data.Current.X) * alpha,
+				data.Current.Y + (data.Target.Y - data.Current.Y) * alpha
 			)
-			setFrameTopLeft(data.Frame, nextTopLeft)
+
+			if (data.Target - data.Current).Magnitude <= 0.05 then
+				data.Current = Vector2.new(data.Target.X, data.Target.Y)
+			end
+
+			setFrameTopLeft(data.Frame, data.Current)
 		end
 	end
 end)
@@ -2208,13 +2214,22 @@ local function makeDraggable(handle, frame)
 		Frame = frame,
 		Dragging = false,
 		DragOffset = Vector2.zero,
-		Target = Vector2.new(0, 0)
+		Target = nil,
+		Current = nil,
 	}
 
 	task.defer(function()
+		if not frame or not frame.Parent then
+			return
+		end
 		RunService.Heartbeat:Wait()
 		local pos = frame.AbsolutePosition
-		dragRegistry[id].Target = Vector2.new(pos.X, pos.Y)
+		local data = dragRegistry[id]
+		if data then
+			data.Target = Vector2.new(pos.X, pos.Y)
+			data.Current = Vector2.new(pos.X, pos.Y)
+			setFrameTopLeft(frame, data.Current)
+		end
 	end)
 
 	handle.InputBegan:Connect(function(input)
@@ -2227,10 +2242,12 @@ local function makeDraggable(handle, frame)
 			return
 		end
 
-		data.Dragging = true
 		local mousePos = getMousePosition()
-		data.DragOffset = mousePos - frame.AbsolutePosition
-		data.Target = Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
+		local frameTopLeft = data.Current or frame.AbsolutePosition
+		data.Dragging = true
+		data.DragOffset = mousePos - frameTopLeft
+		data.Target = Vector2.new(frameTopLeft.X, frameTopLeft.Y)
+		data.Current = Vector2.new(frameTopLeft.X, frameTopLeft.Y)
 
 		input.Changed:Connect(function()
 			if input.UserInputState == Enum.UserInputState.End then
@@ -2251,6 +2268,8 @@ local function makeDraggable(handle, frame)
 
 		local mousePos = getMousePosition()
 		data.Target = mousePos - data.DragOffset
+		data.Current = Vector2.new(data.Target.X, data.Target.Y)
+		setFrameTopLeft(frame, data.Current)
 	end)
 end
 
@@ -4084,6 +4103,7 @@ function Amphibia.Boot()
 	return Amphibia
 end
 
+	return Amphibia
 end
 
 return createAmphibia()
