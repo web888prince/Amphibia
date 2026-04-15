@@ -701,15 +701,34 @@ local function createSlider(name, section, layoutOrder, ExplorerName)
 	sliderLineStroke.Thickness = 0.4
 	sliderLineStroke.ZIndex = 1
 
+	local sliderFill = Instance.new("Frame")
+	sliderFill.Parent = sliderLine
+	sliderFill.Name = "SliderFill"
+	sliderFill.BackgroundColor3 = Color3.fromRGB(150,64,255)
+	sliderFill.BorderSizePixel = 0
+	sliderFill.Size = UDim2.new(0, 0, 1, 0)
+	sliderFill.ZIndex = 1
+
+	local sliderFillCorner = Instance.new("UICorner")
+	sliderFillCorner.Parent = sliderFill
+	sliderFillCorner.CornerRadius = UDim.new(1,0)
+
+	local sliderFillGradient = Instance.new("UIGradient")
+	sliderFillGradient.Parent = sliderFill
+	sliderFillGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(137,98,255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
+	})
+
 	local sliderKnob = Instance.new("Frame")
 	sliderKnob.Parent = sliderLine
 	sliderKnob.Name = "SliderKnob"
 	sliderKnob.AnchorPoint = Vector2.new(0.5,0.5)
 	sliderKnob.BackgroundColor3 = Color3.fromRGB(255,255,255)
-	sliderKnob.Position = UDim2.new(0.027,0,0.333,0)
-	sliderKnob.Size = UDim2.new(0,10,0,10)
+	sliderKnob.Position = UDim2.new(0.027,0,0.5,0)
+	sliderKnob.Size = UDim2.new(0,11,0,11)
 	sliderKnob.BorderSizePixel = 0
-	sliderKnob.ZIndex = 1
+	sliderKnob.ZIndex = 2
 
 	local sliderKnobCorner = Instance.new("UICorner")
 	sliderKnobCorner.Parent = sliderKnob
@@ -727,14 +746,15 @@ local function createSlider(name, section, layoutOrder, ExplorerName)
 	sliderValueTextbox.Parent = sliderButton
 	sliderValueTextbox.BackgroundTransparency = 1
 	sliderValueTextbox.BorderSizePixel = 0
-	sliderValueTextbox.Position = UDim2.new(0.915,0,0.335,0)
-	sliderValueTextbox.Size = UDim2.new(0,18,0,6)
+	sliderValueTextbox.Position = UDim2.new(0.86,0,0.16,0)
+	sliderValueTextbox.Size = UDim2.new(0,34,0,18)
 	sliderValueTextbox.Font = Enum.Font.RobotoMono
 	sliderValueTextbox.PlaceholderColor3 = Color3.fromRGB(178,178,178)
 	sliderValueTextbox.PlaceholderText = "0" -- this text is a indicator of current value and can contains only numbers. Also make that in script coder can select max and min value for slider.
 	sliderValueTextbox.Text = "0"
-	sliderValueTextbox.TextSize = 10
-	sliderValueTextbox.TextXAlignment = Enum.TextXAlignment.Left
+	sliderValueTextbox.TextSize = 11
+	sliderValueTextbox.ClearTextOnFocus = false
+	sliderValueTextbox.TextXAlignment = Enum.TextXAlignment.Right
 	sliderValueTextbox.TextColor3 = Color3.fromRGB(255,255,255)
 
 	local nameText = Instance.new("TextLabel")
@@ -1780,6 +1800,8 @@ local function buildNotificationsAndDemo(NotificationsGui, TABS_TabsBg, MAIN_Tab
     NOTIFICATIONS_NotificationDescription.Text = "Notification description"
     NOTIFICATIONS_NotificationDescription.TextColor3 = Color3.fromRGB(161,161,161)
     NOTIFICATIONS_NotificationDescription.TextSize = 12
+    NOTIFICATIONS_NotificationDescription.TextWrapped = true
+    NOTIFICATIONS_NotificationDescription.TextYAlignment = Enum.TextYAlignment.Top
     NOTIFICATIONS_NotificationDescription.TextXAlignment = Enum.TextXAlignment.Left
 
     local Category1, c1TabsHolderFrame = createTabCategory("Main", TABS_TabsBg)
@@ -1865,6 +1887,7 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local TextService = game:GetService("TextService")
 
 MainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ColorPickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -1949,6 +1972,10 @@ local function getViewportSize()
 	return Vector2.new(1920, 1080)
 end
 
+local function getMousePosition()
+	return UIS:GetMouseLocation()
+end
+
 local function pointInGui(point, gui)
 	if not gui or not gui.AbsolutePosition then
 		return false
@@ -1959,15 +1986,12 @@ local function pointInGui(point, gui)
 end
 
 local function toOffsetWindow(frame)
-	task.defer(function()
-		if not frame or not frame.Parent then
-			return
-		end
-		RunService.Heartbeat:Wait()
-		local abs = frame.AbsolutePosition
-		frame.AnchorPoint = Vector2.zero
-		frame.Position = UDim2.fromOffset(abs.X, abs.Y)
-	end)
+	if not frame or not frame.Parent then
+		return
+	end
+	local abs = frame.AbsolutePosition
+	frame.AnchorPoint = Vector2.zero
+	frame.Position = UDim2.fromOffset(abs.X, abs.Y)
 end
 
 local dragRegistry = {}
@@ -1979,8 +2003,8 @@ RunService.RenderStepped:Connect(function(dt)
 			local current = data.Frame.Position
 			local target = data.Target
 			data.Frame.Position = UDim2.fromOffset(
-				current.X.Offset + ((target.X) - current.X.Offset) * alpha,
-				current.Y.Offset + ((target.Y) - current.Y.Offset) * alpha
+				current.X.Offset + (target.X - current.X.Offset) * alpha,
+				current.Y.Offset + (target.Y - current.Y.Offset) * alpha
 			)
 		end
 	end
@@ -1992,8 +2016,6 @@ local function makeDraggable(handle, frame)
 	end
 
 	handle.Active = true
-	toOffsetWindow(frame)
-
 	local id = tostring(frame)
 	dragRegistry[id] = dragRegistry[id] or {
 		Frame = frame,
@@ -2004,8 +2026,10 @@ local function makeDraggable(handle, frame)
 
 	task.defer(function()
 		RunService.Heartbeat:Wait()
-		local pos = frame.AbsolutePosition
-		dragRegistry[id].Target = Vector2.new(pos.X, pos.Y)
+		if frame and frame.Parent then
+			local pos = frame.AbsolutePosition
+			dragRegistry[id].Target = Vector2.new(pos.X, pos.Y)
+		end
 	end)
 
 	handle.InputBegan:Connect(function(input)
@@ -2018,10 +2042,12 @@ local function makeDraggable(handle, frame)
 			return
 		end
 
+		toOffsetWindow(frame)
+		local abs = frame.AbsolutePosition
+		data.Target = Vector2.new(abs.X, abs.Y)
+		data.DragOffset = getMousePosition() - abs
 		data.Dragging = true
-		local mousePos = UIS:GetMouseLocation() - GuiService:GetGuiInset()
-		data.DragOffset = mousePos - frame.AbsolutePosition
-		data.Target = Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
+
 		input.Changed:Connect(function()
 			if input.UserInputState == Enum.UserInputState.End then
 				data.Dragging = false
@@ -2034,13 +2060,11 @@ local function makeDraggable(handle, frame)
 		if not data or not data.Dragging then
 			return
 		end
-
 		if input.UserInputType ~= Enum.UserInputType.MouseMovement then
 			return
 		end
-
-		local mousePos = UIS:GetMouseLocation() - GuiService:GetGuiInset()
-		data.Target = mousePos - data.DragOffset
+		local mousePos = getMousePosition()
+		data.Target = Vector2.new(mousePos.X - data.DragOffset.X, mousePos.Y - data.DragOffset.Y)
 	end)
 end
 
@@ -2137,6 +2161,13 @@ animateIconButton(COLORPICKER_MoveForwardButton, 0.25, 0.05)
 animateIconButton(COLORPICKER_RandomColor, 0.25, 0.05)
 animateIconButton(COLORPICKER_ResetToDefault, 0.25, 0.05)
 
+MAIN_HeaderBgFrame.Active = true
+COLORPICKER_HeaderBgFrame.Active = true
+COLORPICKER_CloseButton.ZIndex = 7
+COLORPICKER_MoveBackButton.ZIndex = 7
+COLORPICKER_MoveForwardButton.ZIndex = 7
+COLORPICKER_RandomColor.ZIndex = 7
+COLORPICKER_ResetToDefault.ZIndex = 7
 makeDraggable(MAIN_HeaderBgFrame, MAIN_MainBgFrame)
 makeDraggable(COLORPICKER_HeaderBgFrame, COLORPICKER_MainFrame)
 
@@ -2167,6 +2198,8 @@ ConfirmFrame.Name = "ConfirmFrame"
 ConfirmFrame.Parent = ConfirmRoot
 ConfirmFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 ConfirmFrame.Size = UDim2.fromOffset(335, 150)
+ConfirmFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+ConfirmFrame.Position = UDim2.fromScale(0.5, 0.5)
 ConfirmFrame.ZIndex = 401
 
 local ConfirmFrameCorner = Instance.new("UICorner")
@@ -2302,8 +2335,6 @@ local ConfirmYes = createConfirmActionButton("Yes", UDim2.new(0.042, 0, 0.73, 0)
 local ConfirmNo = createConfirmActionButton("No", UDim2.new(0.542, 0, 0.73, 0))
 
 local confirmScale = createScale(ConfirmFrame, 0.97)
-makeDraggable(ConfirmHeader, ConfirmFrame)
-toOffsetWindow(ConfirmFrame)
 
 local confirmBusy = false
 local function hideConfirm()
@@ -2330,9 +2361,7 @@ local function showConfirm()
 	ConfirmRoot.BackgroundTransparency = 1
 	ConfirmFrame.BackgroundTransparency = 1
 	confirmScale.Scale = 0.97
-	RunService.Heartbeat:Wait()
-	local viewport = getViewportSize()
-	ConfirmFrame.Position = UDim2.fromOffset(math.floor((viewport.X - ConfirmFrame.AbsoluteSize.X) * 0.5), math.floor((viewport.Y - ConfirmFrame.AbsoluteSize.Y) * 0.5))
+	ConfirmFrame.Position = UDim2.fromScale(0.5, 0.5)
 	tween(ConfirmRoot, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.32})
 	tween(ConfirmFrame, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
 	tween(confirmScale, OPEN_TWEEN, {Scale = 1})
@@ -2391,7 +2420,8 @@ DropdownWindowStroke1.Parent = DropdownWindow
 local DropdownWindowStroke2 = Instance.new("UIStroke")
 DropdownWindowStroke2.Color = Color3.fromRGB(0,0,0)
 DropdownWindowStroke2.Thickness = 1
-DropdownWindowStroke2.Transparency = 0.18
+DropdownWindowStroke2.Transparency = 0.5
+DropdownWindowStroke2.ZIndex = 2
 DropdownWindowStroke2.Parent = DropdownWindow
 
 local DropdownHeader = Instance.new("Frame")
@@ -2445,8 +2475,8 @@ DropdownItems.Name = "Items"
 DropdownItems.Parent = DropdownWindow
 DropdownItems.BackgroundTransparency = 1
 DropdownItems.BorderSizePixel = 0
-DropdownItems.Position = UDim2.new(0, 0, 0, 36)
-DropdownItems.Size = UDim2.new(1, 0, 1, -36)
+DropdownItems.Position = UDim2.new(0, 0, 0, 37)
+DropdownItems.Size = UDim2.new(1, 0, 1, -41)
 DropdownItems.AutomaticCanvasSize = Enum.AutomaticSize.Y
 DropdownItems.CanvasSize = UDim2.new()
 DropdownItems.ScrollBarImageTransparency = 1
@@ -2587,7 +2617,6 @@ local function createDropdownItem(binding, item)
 			if item.Callback then
 				item.Callback(item.Value, item)
 			end
-			closeDropdown()
 		end
 
 		if binding.Multi and item.Callback then
@@ -2627,11 +2656,12 @@ local function openDropdown(binding)
 	local buttonPos = binding.Button.AbsolutePosition
 	local buttonSize = binding.Button.AbsoluteSize
 	local viewport = getViewportSize()
-	local targetX = buttonPos.X + buttonSize.X + 14
+	local mousePos = getMousePosition()
+	local targetX = mousePos.X + 14
 	local targetY = buttonPos.Y
 
 	if targetX + 240 > viewport.X - 10 then
-		targetX = math.max(10, buttonPos.X - 254)
+		targetX = math.max(10, mousePos.X - 254)
 	end
 	if targetY + targetHeight > viewport.Y - 10 then
 		targetY = math.max(10, viewport.Y - targetHeight - 10)
@@ -2739,7 +2769,7 @@ UIS.InputBegan:Connect(function(input, processed)
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 		return
 	end
-	if activeDropdown and not pointInGui(UIS:GetMouseLocation() - GuiService:GetGuiInset(), DropdownWindow) and not pointInGui(UIS:GetMouseLocation() - GuiService:GetGuiInset(), activeDropdown.Button) then
+	if activeDropdown and not pointInGui(getMousePosition(), DropdownWindow) and not pointInGui(getMousePosition(), activeDropdown.Button) then
 		closeDropdown()
 	end
 end)
@@ -2790,6 +2820,132 @@ CP_ValueGradient.Transparency = NumberSequence.new{
 }
 CP_ValueGradient.Parent = CP_ValueOverlay
 
+COLORPICKER_ColorPickerMainFrameDot.AnchorPoint = Vector2.new(0.5, 0.5)
+COLORPICKER_ColorPickerMainFrameDot.Size = UDim2.fromOffset(10, 10)
+COLORPICKER_ColorPickerMainFrameDot.BackgroundColor3 = Color3.fromRGB(255,255,255)
+COLORPICKER_ColorPickerMainFrameDot.ZIndex = 4
+COLORPICKER_ColorPickerMainFrameDotGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,255)),
+	ColorSequenceKeypoint.new(1,Color3.fromRGB(225,225,225))
+}
+
+local function buildColorValueEditors(parent)
+	local refs = {}
+	local title = parent:FindFirstChild("OtherText")
+	if title and title:IsA("TextLabel") then
+		title.Text = "Values:"
+		title.Size = UDim2.fromOffset(82, 16)
+	end
+
+	local root = Instance.new("Frame")
+	root.Name = "ValueEditors"
+	root.Parent = parent
+	root.BackgroundTransparency = 1
+	root.Position = UDim2.new(0.585,0,0.37,0)
+	root.Size = UDim2.fromOffset(228, 134)
+	root.ZIndex = 6
+
+	local rgbTitle = Instance.new("TextLabel")
+	rgbTitle.Parent = root
+	rgbTitle.BackgroundTransparency = 1
+	rgbTitle.Position = UDim2.fromOffset(0, 0)
+	rgbTitle.Size = UDim2.fromOffset(80, 14)
+	rgbTitle.Font = Enum.Font.RobotoMono
+	rgbTitle.Text = "RGB"
+	rgbTitle.TextColor3 = Color3.fromRGB(86,86,86)
+	rgbTitle.TextSize = 12
+	rgbTitle.TextXAlignment = Enum.TextXAlignment.Left
+	rgbTitle.ZIndex = 6
+
+	local hsvTitle = Instance.new("TextLabel")
+	hsvTitle.Parent = root
+	hsvTitle.BackgroundTransparency = 1
+	hsvTitle.Position = UDim2.fromOffset(118, 0)
+	hsvTitle.Size = UDim2.fromOffset(80, 14)
+	hsvTitle.Font = Enum.Font.RobotoMono
+	hsvTitle.Text = "HSV"
+	hsvTitle.TextColor3 = Color3.fromRGB(86,86,86)
+	hsvTitle.TextSize = 12
+	hsvTitle.TextXAlignment = Enum.TextXAlignment.Left
+	hsvTitle.ZIndex = 6
+
+	local function createMiniInput(key, labelText, x, y)
+		local holder = Instance.new("Frame")
+		holder.Parent = root
+		holder.BackgroundTransparency = 1
+		holder.Position = UDim2.fromOffset(x, y)
+		holder.Size = UDim2.fromOffset(100, 28)
+		holder.ZIndex = 6
+
+		local label = Instance.new("TextLabel")
+		label.Parent = holder
+		label.BackgroundTransparency = 1
+		label.Position = UDim2.fromOffset(0, 0)
+		label.Size = UDim2.fromOffset(18, 28)
+		label.Font = Enum.Font.RobotoMono
+		label.Text = labelText
+		label.TextColor3 = Color3.fromRGB(255,255,255)
+		label.TextSize = 13
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.ZIndex = 6
+
+		local box = Instance.new("TextBox")
+		box.Parent = holder
+		box.Name = key .. "Box"
+		box.BackgroundColor3 = Color3.fromRGB(104,104,104)
+		box.BorderSizePixel = 0
+		box.Position = UDim2.fromOffset(18, 5)
+		box.Size = UDim2.fromOffset(58, 18)
+		box.Font = Enum.Font.RobotoMono
+		box.TextColor3 = Color3.fromRGB(255,255,255)
+		box.PlaceholderColor3 = Color3.fromRGB(178,178,178)
+		box.Text = "0"
+		box.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+		box.TextStrokeTransparency = 0.44
+		box.TextSize = 11
+		box.ClearTextOnFocus = false
+		box.ZIndex = 6
+		box.TextXAlignment = Enum.TextXAlignment.Right
+
+		local boxCorner = Instance.new("UICorner")
+		boxCorner.Parent = box
+		boxCorner.CornerRadius = UDim.new(0,4)
+
+		local boxGradient = Instance.new("UIGradient")
+		boxGradient.Parent = box
+		boxGradient.Rotation = -90
+		boxGradient.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(120,120,120)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
+		})
+
+		local boxStroke1 = Instance.new("UIStroke")
+		boxStroke1.Parent = box
+		boxStroke1.Color = Color3.fromRGB(61,61,61)
+		boxStroke1.Thickness = 2
+
+		local boxStroke2 = Instance.new("UIStroke")
+		boxStroke2.Parent = box
+		boxStroke2.Color = Color3.fromRGB(0,0,0)
+		boxStroke2.Thickness = 1
+		boxStroke2.Transparency = 0.43
+
+		refs[key] = box
+		return box
+	end
+
+	createMiniInput("R", "R:", 0, 18)
+	createMiniInput("G", "G:", 0, 46)
+	createMiniInput("B", "B:", 0, 74)
+	createMiniInput("H", "H:", 118, 18)
+	createMiniInput("S", "S:", 118, 46)
+	createMiniInput("V", "V:", 118, 74)
+
+	return refs
+end
+
+local COLOR_VALUE_EDITORS = buildColorValueEditors(COLORPICKER_MainFrame)
+
 local colorPickerBindings = setmetatable({}, {__mode = "k"})
 local colorPickerActiveBinding = nil
 local colorPickerState = {
@@ -2838,12 +2994,27 @@ local function pushRecentColor(color)
 	recolorLastColorFrames()
 end
 
+local function updateColorEditorValues(color)
+	local r = math.round(color.R * 255)
+	local g = math.round(color.G * 255)
+	local b = math.round(color.B * 255)
+	local h, s, v = color:ToHSV()
+	if COLOR_VALUE_EDITORS.R then COLOR_VALUE_EDITORS.R.Text = tostring(r) end
+	if COLOR_VALUE_EDITORS.G then COLOR_VALUE_EDITORS.G.Text = tostring(g) end
+	if COLOR_VALUE_EDITORS.B then COLOR_VALUE_EDITORS.B.Text = tostring(b) end
+	if COLOR_VALUE_EDITORS.H then COLOR_VALUE_EDITORS.H.Text = tostring(math.round(h * 360)) end
+	if COLOR_VALUE_EDITORS.S then COLOR_VALUE_EDITORS.S.Text = tostring(math.round(s * 100)) end
+	if COLOR_VALUE_EDITORS.V then COLOR_VALUE_EDITORS.V.Text = tostring(math.round(v * 100)) end
+end
+
 local function updateColorPickerVisuals()
 	local hueColor = Color3.fromHSV(colorPickerState.Hue, 1, 1)
+	local currentColor = Color3.fromHSV(colorPickerState.Hue, colorPickerState.Sat, colorPickerState.Val)
 	COLORPICKER_ColorPickerMainFrame.BackgroundColor3 = hueColor
-	COLORPICKER_CurrentColorFrame.BackgroundColor3 = Color3.fromHSV(colorPickerState.Hue, colorPickerState.Sat, colorPickerState.Val)
-	COLORPICKER_ColorPickerMainFrameDot.Position = UDim2.new(colorPickerState.Sat, 0, 1 - colorPickerState.Val, 0)
-	COLORPICKER_ColorSelectorFrameSelectLine.Position = UDim2.new(0, 0, colorPickerState.Hue, 0)
+	COLORPICKER_CurrentColorFrame.BackgroundColor3 = currentColor
+	tween(COLORPICKER_ColorPickerMainFrameDot, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(colorPickerState.Sat, 0, 1 - colorPickerState.Val, 0)})
+	tween(COLORPICKER_ColorSelectorFrameSelectLine, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, colorPickerState.Hue, 0)})
+	updateColorEditorValues(currentColor)
 end
 
 local function pushColorHistory(binding, color)
@@ -2879,6 +3050,7 @@ local function applyColorToBinding(binding, color, pushHistory)
 		pushColorHistory(binding, color)
 		pushRecentColor(color)
 	end
+	updateColorEditorValues(color)
 	if binding.Callback then
 		binding.Callback(color)
 	end
@@ -2956,12 +3128,49 @@ local function updateHueFromMouse(mousePosition)
 	commitCurrentColor(false)
 end
 
+local function applyEditorValues(group)
+	if group == "RGB" then
+		local r = clamp(tonumber(COLOR_VALUE_EDITORS.R.Text) or 0, 0, 255)
+		local g = clamp(tonumber(COLOR_VALUE_EDITORS.G.Text) or 0, 0, 255)
+		local b = clamp(tonumber(COLOR_VALUE_EDITORS.B.Text) or 0, 0, 255)
+		syncColorPickerFromColor(Color3.fromRGB(r, g, b))
+		commitCurrentColor(true)
+	else
+		local h = clamp(tonumber(COLOR_VALUE_EDITORS.H.Text) or 0, 0, 360) / 360
+		local s = clamp(tonumber(COLOR_VALUE_EDITORS.S.Text) or 0, 0, 100) / 100
+		local v = clamp(tonumber(COLOR_VALUE_EDITORS.V.Text) or 0, 0, 100) / 100
+		colorPickerState.Hue = h
+		colorPickerState.Sat = s
+		colorPickerState.Val = v
+		updateColorPickerVisuals()
+		commitCurrentColor(true)
+	end
+end
+
+for _, key in ipairs({"R", "G", "B"}) do
+	local box = COLOR_VALUE_EDITORS[key]
+	if box then
+		box.FocusLost:Connect(function()
+			applyEditorValues("RGB")
+		end)
+	end
+end
+
+for _, key in ipairs({"H", "S", "V"}) do
+	local box = COLOR_VALUE_EDITORS[key]
+	if box then
+		box.FocusLost:Connect(function()
+			applyEditorValues("HSV")
+		end)
+	end
+end
+
 COLORPICKER_ColorPickerMainFrame.InputBegan:Connect(function(input)
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 		return
 	end
 	colorPickerState.DraggingSquare = true
-	updateSquareFromMouse(UIS:GetMouseLocation() - GuiService:GetGuiInset())
+	updateSquareFromMouse(getMousePosition())
 end)
 
 COLORPICKER_ColorSelectorFrame.InputBegan:Connect(function(input)
@@ -2969,14 +3178,14 @@ COLORPICKER_ColorSelectorFrame.InputBegan:Connect(function(input)
 		return
 	end
 	colorPickerState.DraggingHue = true
-	updateHueFromMouse(UIS:GetMouseLocation() - GuiService:GetGuiInset())
+	updateHueFromMouse(getMousePosition())
 end)
 
 UIS.InputChanged:Connect(function(input)
 	if input.UserInputType ~= Enum.UserInputType.MouseMovement then
 		return
 	end
-	local mousePos = UIS:GetMouseLocation() - GuiService:GetGuiInset()
+	local mousePos = getMousePosition()
 	if colorPickerState.DraggingSquare then
 		updateSquareFromMouse(mousePos)
 	elseif colorPickerState.DraggingHue then
@@ -3075,11 +3284,10 @@ function Amphibia.BindColorPicker(colorPickerButton, config)
 
 	local api = {}
 	function api:Set(color)
-		binding.Value = color
-		if preview then
-			preview.BackgroundColor3 = color
+		applyColorToBinding(binding, color, true)
+		if colorPickerActiveBinding == binding then
+			syncColorPickerFromColor(color)
 		end
-		pushColorHistory(binding, color)
 		return api
 	end
 	function api:Get()
@@ -3125,11 +3333,28 @@ function Amphibia.BindToggle(toggleButton, config)
 	local nameText = toggleButton:FindFirstChild("NameText")
 	local function apply(instant)
 		if active then
-			active.Visible = true
-			active.Size = state and UDim2.fromOffset(14, 14) or UDim2.fromOffset(0, 0)
-			active.BackgroundTransparency = state and 0 or 1
-			if not instant then
-				tween(active, DEFAULT_TWEEN, {Size = state and UDim2.fromOffset(14, 14) or UDim2.fromOffset(0, 0), BackgroundTransparency = state and 0 or 1})
+			if state then
+				active.Visible = true
+				active.Size = instant and UDim2.fromOffset(14, 14) or active.Size
+				active.BackgroundTransparency = 0
+				if not instant then
+					tween(active, DEFAULT_TWEEN, {Size = UDim2.fromOffset(14, 14), BackgroundTransparency = 0})
+				end
+			else
+				if instant then
+					active.Visible = false
+					active.Size = UDim2.fromOffset(0, 0)
+					active.BackgroundTransparency = 1
+				else
+					local tw = tween(active, DEFAULT_TWEEN, {Size = UDim2.fromOffset(0, 0), BackgroundTransparency = 1})
+					if tw then
+						tw.Completed:Once(function()
+							if not state and active.Parent then
+								active.Visible = false
+							end
+						end)
+					end
+				end
 			end
 		end
 		if nameText then
@@ -3207,6 +3432,7 @@ function Amphibia.BindSlider(sliderButton, config)
 	local callback = config.Callback
 	local line = sliderButton:FindFirstChild("SliderLine")
 	local knob = line and line:FindFirstChild("SliderKnob")
+	local fill = line and line:FindFirstChild("SliderFill")
 	local valueBox = sliderButton:FindFirstChildOfClass("TextBox")
 	local value = tonumber(config.Default)
 	if value == nil then
@@ -3221,6 +3447,9 @@ function Amphibia.BindSlider(sliderButton, config)
 		local alpha = (value - min) / math.max(max - min, 0.0001)
 		if knob then
 			tween(knob, DEFAULT_TWEEN, {Position = UDim2.new(alpha, 0, 0.5, 0)})
+		end
+		if fill and line then
+			tween(fill, DEFAULT_TWEEN, {Size = UDim2.new(alpha, 0, 1, 0)})
 		end
 		if valueBox then
 			valueBox.Text = formatNumber(value, decimals)
@@ -3247,7 +3476,7 @@ function Amphibia.BindSlider(sliderButton, config)
 				return
 			end
 			dragging = true
-			apply(valueFromMouse(UIS:GetMouseLocation() - GuiService:GetGuiInset()), true)
+			apply(valueFromMouse(getMousePosition()), true)
 		end)
 	end
 
@@ -3255,7 +3484,7 @@ function Amphibia.BindSlider(sliderButton, config)
 		if not dragging or input.UserInputType ~= Enum.UserInputType.MouseMovement then
 			return
 		end
-		apply(valueFromMouse(UIS:GetMouseLocation() - GuiService:GetGuiInset()), true)
+		apply(valueFromMouse(getMousePosition()), true)
 	end)
 
 	UIS.InputEnded:Connect(function(input)
@@ -3381,27 +3610,38 @@ end
 
 collectTabPairs()
 
+local TAB_DEFAULT_COLOR = Color3.fromRGB(255,255,255)
+local TAB_HOVER_COLOR = Color3.fromRGB(185,185,185)
+local TAB_ACTIVE_COLOR = Color3.fromRGB(180,110,255)
+
 for _, info in ipairs(tabData) do
 	addRowHover(info.Button)
-	animateLabelButton(info.Button, Color3.fromRGB(255,255,255), Color3.fromRGB(185, 127, 255))
+	info.Button:SetAttribute("SelectedTab", false)
+	info.Button.MouseEnter:Connect(function()
+		if not info.Button:GetAttribute("SelectedTab") then
+			tween(info.Button, DEFAULT_TWEEN, {TextColor3 = TAB_HOVER_COLOR})
+		end
+	end)
+	info.Button.MouseLeave:Connect(function()
+		if not info.Button:GetAttribute("SelectedTab") then
+			tween(info.Button, DEFAULT_TWEEN, {TextColor3 = TAB_DEFAULT_COLOR})
+		end
+	end)
 end
 
 local function setTab(tabButton)
 	for _, info in ipairs(tabData) do
 		local selected = info.Button == tabButton
+		info.Button:SetAttribute("SelectedTab", selected)
 		info.Content.Visible = selected
 		if selected then
 			info.Content.Position = UDim2.new(0.241, 6, 0.101, 0)
 			tween(info.Content, OPEN_TWEEN, {Position = UDim2.new(0.241, 0, 0.101, 0)})
 			currentTabButton = info.Button
 			currentTabContent = info.Content
-			if info.Button:IsA("TextButton") then
-				tween(info.Button, DEFAULT_TWEEN, {TextColor3 = Color3.fromRGB(180, 110, 255)})
-			end
+			tween(info.Button, DEFAULT_TWEEN, {TextColor3 = TAB_ACTIVE_COLOR})
 		else
-			if info.Button:IsA("TextButton") then
-				tween(info.Button, DEFAULT_TWEEN, {TextColor3 = Color3.fromRGB(255,255,255)})
-			end
+			tween(info.Button, DEFAULT_TWEEN, {TextColor3 = TAB_DEFAULT_COLOR})
 		end
 	end
 end
@@ -3574,6 +3814,69 @@ local function removeNotification(entry)
 	refreshNotificationTargets()
 end
 
+local function resizeNotificationFrame(frame)
+	local width = 253
+	local title = frame:FindFirstChild("NotificationName")
+	local desc = frame:FindFirstChild("NotificationDescription")
+	local timeLeft = frame:FindFirstChild("TimeLeft")
+	local freezeButton = frame:FindFirstChild("FreezeButton")
+	local closeButton = frame:FindFirstChild("CloseButton")
+	local dragLine = frame:FindFirstChild("DragLine")
+	local timeline = frame:FindFirstChild("TimeLine")
+	local timelineGlow = frame:FindFirstChild("TimeLineGlow")
+
+	local descText = desc and desc.Text or ""
+	local descBounds = TextService:GetTextSize(descText, 12, Enum.Font.RobotoMono, Vector2.new(182, 1000))
+	local descHeight = math.max(37, descBounds.Y + 2)
+	local totalHeight = math.max(65, 24 + descHeight + 18)
+
+	frame.Size = UDim2.fromOffset(width, totalHeight)
+	if title then
+		title.Position = UDim2.fromOffset(19, 2)
+		title.Size = UDim2.fromOffset(150, 23)
+	end
+	if desc then
+		desc.Position = UDim2.fromOffset(19, 17)
+		desc.Size = UDim2.fromOffset(182, descHeight)
+	end
+	if dragLine then
+		dragLine.Position = UDim2.fromOffset(6, 11)
+		dragLine.Size = UDim2.fromOffset(5, math.max(43, totalHeight - 22))
+	end
+	if closeButton then
+		closeButton.Position = UDim2.fromOffset(width - 23, 0)
+	end
+	if freezeButton then
+		freezeButton.Position = UDim2.fromOffset(width - 45, 0)
+	end
+	if timeLeft then
+		timeLeft.Position = UDim2.fromOffset(width - 39, totalHeight - 23)
+	end
+	if timeline then
+		timeline.Position = UDim2.fromOffset(0, totalHeight - 2)
+		timeline.Size = UDim2.fromOffset(width, 2)
+	end
+	if timelineGlow then
+		timelineGlow.Position = UDim2.fromOffset(0, totalHeight - 17)
+		timelineGlow.Size = UDim2.fromOffset(width, 17)
+	end
+end
+
+local function fadeGuiObjectTree(root, duration)
+	for _, obj in ipairs(root:GetDescendants()) do
+		if obj:IsA("Frame") then
+			tween(obj, duration, {BackgroundTransparency = 1})
+		elseif obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+			tween(obj, duration, {BackgroundTransparency = 1, TextTransparency = 1, TextStrokeTransparency = 1})
+		elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+			tween(obj, duration, {BackgroundTransparency = 1, ImageTransparency = 1})
+		elseif obj:IsA("UIStroke") then
+			tween(obj, duration, {Transparency = 1})
+		end
+	end
+	tween(root, duration, {BackgroundTransparency = 1})
+end
+
 function Amphibia.Notify(config)
 	config = config or {}
 	createNotificationRenderLoop()
@@ -3599,6 +3902,7 @@ function Amphibia.Notify(config)
 	if desc then
 		desc.Text = tostring(config.Description or "")
 	end
+	resizeNotificationFrame(frame)
 	if timeLeft then
 		timeLeft.Text = tostring(math.ceil(config.Duration or 3.5)) .. "s"
 	end
@@ -3641,12 +3945,11 @@ function Amphibia.Notify(config)
 			return
 		end
 		self.Closing = true
-		local viewport = getViewportSize()
 		local scale = notificationScaleCache[frame]
 		if scale then
-			tween(scale, CLOSE_TWEEN, {Scale = 0.97})
+			tween(scale, CLOSE_TWEEN, {Scale = 0.985})
 		end
-		tween(frame, CLOSE_TWEEN, {Position = UDim2.fromOffset(viewport.X + 30, frame.Position.Y.Offset)})
+		fadeGuiObjectTree(frame, CLOSE_TWEEN)
 		task.delay(0.22, function()
 			removeNotification(self)
 		end)
@@ -3691,7 +3994,7 @@ function Amphibia.Notify(config)
 			end
 			entry.Dragging = true
 			entry.ManualPosition = true
-			entry.DragOffset = (UIS:GetMouseLocation() - GuiService:GetGuiInset()) - frame.AbsolutePosition
+			entry.DragOffset = (getMousePosition()) - frame.AbsolutePosition
 			input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					entry.Dragging = false
@@ -3702,7 +4005,7 @@ function Amphibia.Notify(config)
 
 	UIS.InputChanged:Connect(function(input)
 		if entry.Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-			local mousePos = UIS:GetMouseLocation() - GuiService:GetGuiInset()
+			local mousePos = getMousePosition()
 			frame.Position = UDim2.fromOffset(mousePos.X - entry.DragOffset.X, mousePos.Y - entry.DragOffset.Y)
 		end
 	end)
