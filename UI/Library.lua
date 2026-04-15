@@ -841,911 +841,1023 @@ end
 
 
 --──────────────────────────────────────────────────--
+--──────────────────────────────────────────────────--
 --──────────────────|> Build core ui
 --──────────────────────────────────────────────────--
 
-local MainGui = Instance.new("ScreenGui")
-MainGui.Parent = Default_Parent
-MainGui.Enabled = true
-MainGui.IgnoreGuiInset = true
-MainGui.ResetOnSpawn = false
-MainGui.DisplayOrder = 0
-MainGui.Name = GenerateRandomName(10)
-
-local ColorPickerGui = Instance.new("ScreenGui")
-ColorPickerGui.Parent = Default_Parent
-ColorPickerGui.Enabled = false 
-ColorPickerGui.IgnoreGuiInset = true
-ColorPickerGui.ResetOnSpawn = false
-ColorPickerGui.DisplayOrder = 1
-ColorPickerGui.Name = "ColorPickerGui"
-
-local NotificationsGui = Instance.new("ScreenGui")
-NotificationsGui.Parent = Default_Parent
-NotificationsGui.Enabled = true
-NotificationsGui.IgnoreGuiInset = true
-NotificationsGui.ResetOnSpawn = false
-NotificationsGui.DisplayOrder = 100
-NotificationsGui.Name = "NotificationsGui"
-
-------------------------------------------------
---                                         Main
-------------------------------------------------
-
-local MAIN_MainBgFrame = Instance.new("Frame")
-MAIN_MainBgFrame.Parent = MainGui
-MAIN_MainBgFrame.AnchorPoint = Vector2.new(0.5,0.5)
-MAIN_MainBgFrame.Position = UDim2.new(0.5,0,0.5,0)
-MAIN_MainBgFrame.Size = UDim2.new(0,767,0,484)
-MAIN_MainBgFrame.ZIndex = 0
-MAIN_MainBgFrame.BackgroundTransparency = 0
-MAIN_MainBgFrame.BackgroundColor3 = Color3.fromRGB(16,16,16)
-MAIN_MainBgFrame.Name = "MainBg"
-
-local MAIN_TabsContentFolder = Instance.new("Folder")
-MAIN_TabsContentFolder.Parent =  MAIN_MainBgFrame
-MAIN_TabsContentFolder.Name = "TabsContentFolder"
-
-local MAIN_MainDarkFrame = Instance.new("Frame")
-MAIN_MainDarkFrame.Parent = MainGui
-MAIN_MainDarkFrame.BackgroundTransparency = 0.35
-MAIN_MainDarkFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
-MAIN_MainDarkFrame.ZIndex = -10000
-MAIN_MainDarkFrame.Position = UDim2.new(0,0,0,0)
-MAIN_MainDarkFrame.Size = UDim2.new(1,0,1,0)
-MAIN_MainDarkFrame.Interactable = true
-
-local MAIN_MainBgFrameCorner = Instance.new("UICorner")
-MAIN_MainBgFrameCorner.Parent = MAIN_MainBgFrame
-MAIN_MainBgFrameCorner.CornerRadius = UDim.new(0,4)
-
-local MAIN_MainBgFrameGraident = Instance.new("UIGradient")
-MAIN_MainBgFrameGraident.Parent = MAIN_MainBgFrame
-MAIN_MainBgFrameGraident.Rotation = -90
-MAIN_MainBgFrameGraident.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0,Color3.fromRGB(0,0,0)),
-	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
-}
-
-local MAIN_HeaderContentFolder = Instance.new("Folder")
-MAIN_HeaderContentFolder.Parent = MAIN_MainBgFrame
-MAIN_HeaderContentFolder.Name = "HeaderContent"
-
-local MAIN_SearchFrame = Instance.new("Frame")
-MAIN_SearchFrame.Parent = MAIN_MainBgFrame
-MAIN_SearchFrame.Position = UDim2.new(0.269,0,0.017,0)
-MAIN_SearchFrame.Size = UDim2.new(0,355,0,31)
-MAIN_SearchFrame.ZIndex = 1
-MAIN_SearchFrame.BackgroundTransparency = 0
-MAIN_SearchFrame.BackgroundColor3 = Color3.fromRGB(255,255,255)
-MAIN_SearchFrame.Name = "SearchFrame"
-
-local MAIN_SearchFrameCorner = Instance.new("UICorner")
-MAIN_SearchFrameCorner.Parent = MAIN_SearchFrame
-MAIN_SearchFrameCorner.CornerRadius = UDim.new(0,4)
-
-local MAIN_SearchFrameGradient = Instance.new("UIGradient")
-MAIN_SearchFrameGradient.Parent = MAIN_SearchFrame
-MAIN_SearchFrameGradient.Rotation = 90
-MAIN_SearchFrameGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0,Color3.fromRGB(27,27,27)),
-	ColorSequenceKeypoint.new(1,Color3.fromRGB(29,29,29))
-}
-
-local MAIN_SearchFrameStroke = Instance.new("UIStroke")
-MAIN_SearchFrameStroke.Parent = MAIN_SearchFrame
-MAIN_SearchFrameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-MAIN_SearchFrameStroke.Color = Color3.fromRGB(40,40,40)
-MAIN_SearchFrameStroke.Thickness = 1
-MAIN_SearchFrameStroke.Transparency = 0
-MAIN_SearchFrameStroke.ZIndex = 1
-MAIN_SearchFrameStroke.LineJoinMode = Enum.LineJoinMode.Round
-
-local MAIN_SearchFrameSearchImage = Instance.new("ImageLabel")
-MAIN_SearchFrameSearchImage.Parent = MAIN_SearchFrame
-MAIN_SearchFrameSearchImage.BackgroundTransparency = 1
-MAIN_SearchFrameSearchImage.Position = UDim2.new(0.017,0,0.194,0)
-MAIN_SearchFrameSearchImage.Size = UDim2.new(0,20,0,20)
-MAIN_SearchFrameSearchImage.Image = _searchImageId
-MAIN_SearchFrameSearchImage.ImageTransparency = 0.6
-MAIN_SearchFrameSearchImage.Name = "SearchImage"
-
-local MAIN_SearchFrameTextBox = Instance.new("TextBox")
-MAIN_SearchFrameTextBox.Parent = MAIN_SearchFrame
-MAIN_SearchFrameTextBox.BackgroundTransparency = 1
-MAIN_SearchFrameTextBox.Size = UDim2.new(1,0,1,0)
-MAIN_SearchFrameTextBox.Position = UDim2.new(0,0,0,0)
-MAIN_SearchFrameTextBox.ZIndex = 1
-MAIN_SearchFrameTextBox.Font = Enum.Font.RobotoMono
-MAIN_SearchFrameTextBox.TextColor3 = Color3.fromRGB(255,255,255)
-MAIN_SearchFrameTextBox.TextSize = 14
-MAIN_SearchFrameTextBox.Text = ""
-MAIN_SearchFrameTextBox.PlaceholderText = "Search"
-MAIN_SearchFrameTextBox.Name = "SearchTextBox"
-MAIN_SearchFrameTextBox.TextTransparency = 0.75
-
-local MAIN_SearchFrameTextBoxStroke = Instance.new("UIStroke")
-MAIN_SearchFrameTextBoxStroke.Parent = MAIN_SearchFrameTextBox
-MAIN_SearchFrameTextBoxStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-MAIN_SearchFrameTextBoxStroke.Thickness = 1
-MAIN_SearchFrameTextBoxStroke.LineJoinMode = Enum.LineJoinMode.Round
-MAIN_SearchFrameTextBoxStroke.Color = Color3.fromRGB(33,33,33)
-
-local MAIN_HeaderBgFrame = Instance.new("Frame")
-MAIN_HeaderBgFrame.Parent = MAIN_HeaderContentFolder
-MAIN_HeaderBgFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
-MAIN_HeaderBgFrame.BackgroundTransparency = 0
-MAIN_HeaderBgFrame.Position = UDim2.new(0,0,0,0)
-MAIN_HeaderBgFrame.Size = UDim2.new(0,767,0,48)
-MAIN_HeaderBgFrame.ZIndex = 0
-MAIN_HeaderBgFrame.Name = "HeaderBgFrame"
-
-local MAIN_HeaderBgFrameCorner = Instance.new("UICorner")
-MAIN_HeaderBgFrameCorner.Parent = MAIN_HeaderBgFrame
-MAIN_HeaderBgFrameCorner.CornerRadius = UDim.new(0,4)
-
-local MAIN_HeaderBgFrameGradient = Instance.new("UIGradient")
-MAIN_HeaderBgFrameGradient.Parent = MAIN_HeaderBgFrame
-MAIN_HeaderBgFrameGradient.Rotation = -90
-MAIN_HeaderBgFrameGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0,Color3.fromRGB(95,95,95)),
-	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
-}
-
-local MAIN_HeaderBgFrameStroke = Instance.new("UIStroke")
-MAIN_HeaderBgFrameStroke.Parent = MAIN_HeaderBgFrame
-MAIN_HeaderBgFrameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-MAIN_HeaderBgFrameStroke.Color = Color3.fromRGB(150,64,255)
-MAIN_HeaderBgFrameStroke.LineJoinMode = Enum.LineJoinMode.Round
-MAIN_HeaderBgFrameStroke.Thickness = 1
-MAIN_HeaderBgFrameStroke.ZIndex = 3
-
-local MAIN_HeaderBgFrameStrokeGradient = Instance.new("UIGradient")
-MAIN_HeaderBgFrameStrokeGradient.Parent = MAIN_HeaderBgFrameStroke
-MAIN_HeaderBgFrameStrokeGradient.Rotation = -90
-MAIN_HeaderBgFrameStrokeGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0,0),
-	NumberSequenceKeypoint.new(0.05,1,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-local MAIN_CloseButton = Instance.new("ImageButton")
-MAIN_CloseButton.Parent = MAIN_HeaderContentFolder
-MAIN_CloseButton.BackgroundTransparency = 1
-MAIN_CloseButton.Position = UDim2.new(0.944,0,0.012,0)
-MAIN_CloseButton.Size = UDim2.new(0,36,0,36)
-MAIN_CloseButton.ZIndex = 1
-MAIN_CloseButton.ImageTransparency = 0.84
-MAIN_CloseButton.Name = "CloseButton"
-MAIN_CloseButton.Image = _closeImageId
-
-local MAIN_ScriptImage = Instance.new("ImageLabel")
-MAIN_ScriptImage.Parent = MAIN_HeaderContentFolder
-MAIN_ScriptImage.BackgroundTransparency = 1
-MAIN_ScriptImage.Position = UDim2.new(0,0,0.013,0)
-MAIN_ScriptImage.Size = UDim2.new(0,38,0,38)
-MAIN_ScriptImage.Image = _scriptIcon
-MAIN_ScriptImage.Name = "ScriptImage"
-MAIN_ScriptImage.ImageTransparency = 0
-MAIN_ScriptImage.ZIndex = 5
-
-local MAIN_ScriptName = Instance.new("TextLabel")
-MAIN_ScriptName.Parent = MAIN_HeaderContentFolder
-MAIN_ScriptName.BackgroundTransparency = 1
-MAIN_ScriptName.Position = UDim2.new(0.05,0,0.012,0)
-MAIN_ScriptName.Size = UDim2.new(0,97,0,34)
-MAIN_ScriptName.ZIndex = 5
-MAIN_ScriptName.Font = Enum.Font.RobotoMono
-MAIN_ScriptName.Text = _scriptName
-MAIN_ScriptName.TextSize = 20
-MAIN_ScriptName.TextColor3 = Color3.fromRGB(255,255,255)
-MAIN_ScriptName.TextXAlignment = Enum.TextXAlignment.Left
-MAIN_ScriptName.Name = "ScriptName"
-
-local MAIN_ScriptNameStroke = Instance.new("UIStroke")
-MAIN_ScriptNameStroke.Parent = MAIN_ScriptName
-MAIN_ScriptNameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-MAIN_ScriptNameStroke.Thickness = 0.4
-MAIN_ScriptNameStroke.Color = Color3.fromRGB(255,255,255)
-MAIN_ScriptNameStroke.LineJoinMode = Enum.LineJoinMode.Round
-
-local MAIN_ScriptNameStrokeGradient = Instance.new("UIGradient")
-MAIN_ScriptNameStrokeGradient.Parent = MAIN_ScriptNameStroke
-MAIN_ScriptNameStrokeGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0,Color3.fromRGB(150,64,255)),
-	ColorSequenceKeypoint.new(1,Color3.fromRGB(238,48,255))
-}
-MAIN_ScriptNameStrokeGradient.Rotation = -50
-
-local MAIN_ScriptNameShadow = Instance.new("TextLabel")
-MAIN_ScriptNameShadow.Parent = MAIN_ScriptName
-MAIN_ScriptNameShadow.BackgroundTransparency = 1
-MAIN_ScriptNameShadow.Position = UDim2.new(0,0,-0.1,0)
-MAIN_ScriptNameShadow.Size = UDim2.new(0,96,0,47)
-MAIN_ScriptNameShadow.ZIndex = 5
-MAIN_ScriptNameShadow.Font = Enum.Font.RobotoMono
-MAIN_ScriptNameShadow.Text = _scriptName
-MAIN_ScriptNameShadow.TextSize = 20
-MAIN_ScriptNameShadow.TextColor3 = Color3.fromRGB(0,0,0)
-MAIN_ScriptNameShadow.TextXAlignment = Enum.TextXAlignment.Left
-MAIN_ScriptNameShadow.Name = "TextShadow"
-
-local MAIN_ScriptNameShadowGradient = Instance.new("UIGradient")
-MAIN_ScriptNameShadowGradient.Parent = MAIN_ScriptNameShadow
-MAIN_ScriptNameShadowGradient.Rotation = -90
-MAIN_ScriptNameShadowGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0,0),
-	NumberSequenceKeypoint.new(0.5,0.369,0),
-	NumberSequenceKeypoint.new(1,0,0)
-}
-
-local MAIN_SettingsButton = Instance.new("ImageButton")
-MAIN_SettingsButton.Parent = MAIN_HeaderContentFolder
-MAIN_SettingsButton.Position = UDim2.new(0.74,0,0.024,0)
-MAIN_SettingsButton.Size = UDim2.new(0,25,0,25)
-MAIN_SettingsButton.BackgroundTransparency = 1
-MAIN_SettingsButton.Image = _settingsImageId
-MAIN_SettingsButton.Name = "SettingsButton"
-MAIN_SettingsButton.ImageTransparency = 0.84
-
-local MAIN_HeaderFrameStrokeGlow = Instance.new("Frame")
-MAIN_HeaderFrameStrokeGlow.Parent = MAIN_HeaderContentFolder
-MAIN_HeaderFrameStrokeGlow.Name = "HeaderStrokeGlow"
-MAIN_HeaderFrameStrokeGlow.BackgroundColor3 = Color3.fromRGB(150,64,255)
-MAIN_HeaderFrameStrokeGlow.BackgroundTransparency = 0.25
-MAIN_HeaderFrameStrokeGlow.ZIndex = 5
-MAIN_HeaderFrameStrokeGlow.Position = UDim2.new(0,0,0.1,0)
-MAIN_HeaderFrameStrokeGlow.Size = UDim2.new(0,767,0,17)
-
-local MAIN_HeaderFrameStrokeGlowGradient = Instance.new("UIGradient")
-MAIN_HeaderFrameStrokeGlowGradient.Parent = MAIN_HeaderFrameStrokeGlow
-MAIN_HeaderFrameStrokeGlowGradient.Rotation = 90
-MAIN_HeaderFrameStrokeGlowGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0.727,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-------------------------------------------------
---                                         Tabs
-------------------------------------------------
-
-local TABS_TabsBg = Instance.new("Frame")
-TABS_TabsBg.Parent = MAIN_MainBgFrame
-TABS_TabsBg.Position = UDim2.new(0,0,0.097,0)
-TABS_TabsBg.Size = UDim2.new(0,185,0,436)
-TABS_TabsBg.BackgroundColor3 = Color3.fromRGB(0,0,0)
-TABS_TabsBg.Name = "TabsBg"
-TABS_TabsBg.BorderSizePixel = 0
-
-local TABS_TabsBgGradient = Instance.new("UIGradient")
-TABS_TabsBgGradient.Parent = TABS_TabsBg
-TABS_TabsBgGradient.Rotation = 90
-TABS_TabsBgGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-local TABS_TabsBgListLayout = Instance.new("UIListLayout")
-TABS_TabsBgListLayout.Parent = TABS_TabsBg
-TABS_TabsBgListLayout.Padding = UDim.new(0,15)
-TABS_TabsBgListLayout.FillDirection = Enum.FillDirection.Vertical
-TABS_TabsBgListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-TABS_TabsBgListLayout.Wraps = false
-TABS_TabsBgListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-TABS_TabsBgListLayout.ItemLineAlignment = Enum.ItemLineAlignment.Automatic
-TABS_TabsBgListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-
-local TABS_TabsBgPadding = Instance.new("UIPadding")
-TABS_TabsBgPadding.Parent = TABS_TabsBg
-TABS_TabsBgPadding.PaddingBottom = UDim.new(0,0)
-TABS_TabsBgPadding.PaddingLeft = UDim.new(0,20)
-TABS_TabsBgPadding.PaddingRight = UDim.new(0,0)
-TABS_TabsBgPadding.PaddingTop = UDim.new(0,20)
-
-local TABS_HeaderSplitterLine = Instance.new("Frame")
-TABS_HeaderSplitterLine.Parent = MAIN_MainBgFrame
-TABS_HeaderSplitterLine.Name = "HeaderSplitter"
-TABS_HeaderSplitterLine.BorderSizePixel = 0
-TABS_HeaderSplitterLine.BackgroundColor3 = Color3.fromRGB(150,64,255)
-TABS_HeaderSplitterLine.BackgroundTransparency = 0.2
-TABS_HeaderSplitterLine.Position = UDim2.new(0,0,0.102,0)
-TABS_HeaderSplitterLine.Size = UDim2.new(0,185,0,-1)
-TABS_HeaderSplitterLine.ZIndex = 4
-
-local TABS_HeaderSplitterLineGradient = Instance.new("UIGradient")
-TABS_HeaderSplitterLineGradient.Parent = TABS_HeaderSplitterLine
-TABS_HeaderSplitterLineGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,1,0),
-	NumberSequenceKeypoint.new(1,0,0)
-}
-
-local TABS_TabsSplitterLine = Instance.new("Frame")
-TABS_TabsSplitterLine.Parent = MAIN_MainBgFrame
-TABS_TabsSplitterLine.Position = UDim2.new(0.24,0,0.101,0)
-TABS_TabsSplitterLine.Size = UDim2.new(0,1,0,434)
-TABS_TabsSplitterLine.BackgroundColor3 = Color3.fromRGB(85,85,85)
-TABS_TabsSplitterLine.BackgroundTransparency = 0
-TABS_TabsSplitterLine.BorderSizePixel = 0
-TABS_TabsSplitterLine.ZIndex = 2
-TABS_TabsSplitterLine.Name = "TabsSplitter"
-
-
-local TABS_TabsSplitterLineGradient = Instance.new("UIGradient")
-TABS_TabsSplitterLineGradient.Parent = TABS_TabsSplitterLine
-TABS_TabsSplitterLineGradient.Rotation = 90
-TABS_TabsSplitterLineGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-------------------------------------------------
---                                  Color picker
-------------------------------------------------
-
-local COLORPICKER_MainFrame = Instance.new("Frame")
-COLORPICKER_MainFrame.Parent = ColorPickerGui
-COLORPICKER_MainFrame.Name = "MainBg"
-COLORPICKER_MainFrame.Position = UDim2.new(0.5,0,0.5,0)
-COLORPICKER_MainFrame.Size = UDim2.new(0,608,0,417)
-COLORPICKER_MainFrame.AnchorPoint = Vector2.new(0.5,0.5)
-COLORPICKER_MainFrame.BackgroundColor3 = Color3.fromRGB(16,16,16)
-
-local COLORPICKER_MainFrameCorner = Instance.new("UICorner")
-COLORPICKER_MainFrameCorner.Parent = COLORPICKER_MainFrame
-COLORPICKER_MainFrameCorner.CornerRadius = UDim.new(0,4)
-
-local COLORPICKER_MainFrameGradient = Instance.new("UIGradient")
-COLORPICKER_MainFrameGradient.Parent = COLORPICKER_MainFrame
-COLORPICKER_MainFrameGradient.Rotation = -90
-COLORPICKER_MainFrameGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
-}
-
-local COLORPICKER_MainFrameStroke1 = Instance.new("UIStroke")
-COLORPICKER_MainFrameStroke1.Parent = COLORPICKER_MainFrame
-COLORPICKER_MainFrameStroke1.Color = Color3.fromRGB(47,47,47)
-COLORPICKER_MainFrameStroke1.LineJoinMode = Enum.LineJoinMode.Round
-COLORPICKER_MainFrameStroke1.Thickness = 2
-COLORPICKER_MainFrameStroke1.ZIndex = 1
-
-local COLORPICKER_MainFrameStroke2 = Instance.new("UIStroke")
-COLORPICKER_MainFrameStroke2.Parent = COLORPICKER_MainFrame
-COLORPICKER_MainFrameStroke2.Color = Color3.fromRGB(0,0,0)
-COLORPICKER_MainFrameStroke2.LineJoinMode = Enum.LineJoinMode.Round
-COLORPICKER_MainFrameStroke2.Thickness = 1
-COLORPICKER_MainFrameStroke2.ZIndex = 2
-COLORPICKER_MainFrameStroke2.Transparency = 0.16
-
-local COLORPICKER_MainFrameLastColorFolder = Instance.new("Folder")
-COLORPICKER_MainFrameLastColorFolder.Parent = COLORPICKER_MainFrame
-COLORPICKER_MainFrameLastColorFolder.Name = "LastColor"
-
-local COLORPICKER_ColorPickerMainFrame = Instance.new("Frame")
-COLORPICKER_ColorPickerMainFrame.Parent = COLORPICKER_MainFrame
-COLORPICKER_ColorPickerMainFrame.Name = "ColorPickerMain"
-COLORPICKER_ColorPickerMainFrame.BackgroundColor3 = Color3.fromRGB(255,255,255)
-COLORPICKER_ColorPickerMainFrame.Position = UDim2.new(0.036,0,0.201,0)
-COLORPICKER_ColorPickerMainFrame.Size = UDim2.new(0,219,0,219)
-COLORPICKER_ColorPickerMainFrame.ZIndex = 1
-
-local COLORPICKER_ColorPickerMainFrameCorner = Instance.new("UICorner")
-COLORPICKER_ColorPickerMainFrameCorner.Parent = COLORPICKER_ColorPickerMainFrame
-COLORPICKER_ColorPickerMainFrameCorner.CornerRadius = UDim.new(0,4)
-
-local COLORPICKER_ColorPickerMainFrameStroke1 = Instance.new("UIStroke")
-COLORPICKER_ColorPickerMainFrameStroke1.Parent = COLORPICKER_ColorPickerMainFrame
-COLORPICKER_ColorPickerMainFrameStroke1.Color = Color3.fromRGB(65,65,65)
-COLORPICKER_ColorPickerMainFrameStroke1.Thickness = 2
-COLORPICKER_ColorPickerMainFrameStroke1.ZIndex = 1
-
-local COLORPICKER_ColorPickerMainFrameStroke2 = Instance.new("UIStroke")
-COLORPICKER_ColorPickerMainFrameStroke2.Parent = COLORPICKER_ColorPickerMainFrame
-COLORPICKER_ColorPickerMainFrameStroke2.Color = Color3.fromRGB(0,0,0)
-COLORPICKER_ColorPickerMainFrameStroke2.Thickness = 1
-COLORPICKER_ColorPickerMainFrameStroke2.Transparency = 0.57
-COLORPICKER_ColorPickerMainFrameStroke2.ZIndex = 2
-
-local COLORPICKER_ColorPickerMainFrameDot = Instance.new("Frame")
-COLORPICKER_ColorPickerMainFrameDot.Parent = COLORPICKER_ColorPickerMainFrame
-COLORPICKER_ColorPickerMainFrameDot.Name = "Dot"
-COLORPICKER_ColorPickerMainFrameDot.Position = UDim2.new(0.187,0,0.269,0)
-COLORPICKER_ColorPickerMainFrameDot.Size = UDim2.new(0,8,0,8)
-
-local COLORPICKER_ColorPickerMainFrameDotCorner = Instance.new("UICorner")
-COLORPICKER_ColorPickerMainFrameDotCorner.Parent = COLORPICKER_ColorPickerMainFrameDot
-COLORPICKER_ColorPickerMainFrameDotCorner.CornerRadius = UDim.new(1,0)
-
-local COLORPICKER_ColorPickerMainFrameDotGradient = Instance.new("UIGradient")
-COLORPICKER_ColorPickerMainFrameDotGradient.Parent = COLORPICKER_ColorPickerMainFrameDot
-COLORPICKER_ColorPickerMainFrameDotGradient.Rotation = 90
-COLORPICKER_ColorPickerMainFrameDotGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,255)),
-	ColorSequenceKeypoint.new(1,Color3.fromRGB(176,176,176))
-}
-
-local COLORPICKER_ColorPickerMainFrameDotStroke1 = Instance.new("UIStroke")
-COLORPICKER_ColorPickerMainFrameDotStroke1.Parent = COLORPICKER_ColorPickerMainFrameDot
-COLORPICKER_ColorPickerMainFrameDotStroke1.Color = Color3.fromRGB(0,0,0)
-COLORPICKER_ColorPickerMainFrameDotStroke1.Thickness = 3
-COLORPICKER_ColorPickerMainFrameDotStroke1.ZIndex = 1
-COLORPICKER_ColorPickerMainFrameDotStroke1.Transparency = 0.88
-
-local COLORPICKER_ColorPickerMainFrameDotStroke2 = Instance.new("UIStroke")
-COLORPICKER_ColorPickerMainFrameDotStroke2.Parent = COLORPICKER_ColorPickerMainFrameDot
-COLORPICKER_ColorPickerMainFrameDotStroke2.Color = Color3.fromRGB(0,0,0)
-COLORPICKER_ColorPickerMainFrameDotStroke2.Thickness = 1
-COLORPICKER_ColorPickerMainFrameDotStroke2.Transparency = 0.53
-COLORPICKER_ColorPickerMainFrameDotStroke2.ZIndex = 2
-
-local COLORPICKER_LastColorSplitterLine = Instance.new("Frame")
-COLORPICKER_LastColorSplitterLine.Parent = COLORPICKER_MainFrameLastColorFolder
-COLORPICKER_LastColorSplitterLine.Name = "LastColorSplitterLine"
-COLORPICKER_LastColorSplitterLine.BackgroundTransparency = 0.65
-COLORPICKER_LastColorSplitterLine.Position = UDim2.new(0.558,0,0.307,0)
-COLORPICKER_LastColorSplitterLine.Size = UDim2.new(0,268,0,1)
-COLORPICKER_LastColorSplitterLine.ZIndex = 1
-
-local COLORPICKER_LastColorSplitterLineGradient = Instance.new("UIGradient")
-COLORPICKER_LastColorSplitterLineGradient.Parent = COLORPICKER_LastColorSplitterLine
-COLORPICKER_LastColorSplitterLineGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,1,0),
-	NumberSequenceKeypoint.new(0.5,0.45,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-local COLORPICKER_LastColorUpperGlow = Instance.new("Frame")
-COLORPICKER_LastColorUpperGlow.Parent = COLORPICKER_LastColorSplitterLine
-COLORPICKER_LastColorUpperGlow.Name = "UpperGlow"
-COLORPICKER_LastColorUpperGlow.BackgroundTransparency = 0.85
-COLORPICKER_LastColorUpperGlow.BackgroundColor3 = Color3.fromRGB(52,52,52)
-COLORPICKER_LastColorUpperGlow.Position = UDim2.new(0,0,-44,0)
-COLORPICKER_LastColorUpperGlow.Size = UDim2.new(0,269,0,44)
-COLORPICKER_LastColorUpperGlow.ZIndex = 1
-
-local COLORPICKER_LastColorUpperGlowGradient = Instance.new("UIGradient")
-COLORPICKER_LastColorUpperGlowGradient.Parent = COLORPICKER_LastColorUpperGlow
-COLORPICKER_LastColorUpperGlowGradient.Rotation = -90
-COLORPICKER_LastColorUpperGlowGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-local COLORPICKER_LastColorLowerGlow = Instance.new("Frame")
-COLORPICKER_LastColorLowerGlow.Parent = COLORPICKER_LastColorSplitterLine
-COLORPICKER_LastColorLowerGlow.Name = "LowerGlow"
-COLORPICKER_LastColorLowerGlow.BackgroundTransparency = 0.9
-COLORPICKER_LastColorLowerGlow.BackgroundColor3 = Color3.fromRGB(52,52,52)
-COLORPICKER_LastColorLowerGlow.Position = UDim2.new(0,0,1,0)
-COLORPICKER_LastColorLowerGlow.Size = UDim2.new(0,269,0,44)
-COLORPICKER_LastColorLowerGlow.ZIndex = 1
-
-local COLORPICKER_LastColorLowerGlowGradient = Instance.new("UIGradient")
-COLORPICKER_LastColorLowerGlowGradient.Parent = COLORPICKER_LastColorLowerGlow
-COLORPICKER_LastColorLowerGlowGradient.Rotation = 90
-COLORPICKER_LastColorLowerGlowGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0.5,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-local COLORPICKER_LastColorRecentText = Instance.new("TextLabel")
-COLORPICKER_LastColorRecentText.Parent = COLORPICKER_MainFrameLastColorFolder
-COLORPICKER_LastColorRecentText.Name = "RecentText"
-COLORPICKER_LastColorRecentText.BackgroundTransparency = 1
-COLORPICKER_LastColorRecentText.Position = UDim2.new(0.587,0,0.12,0)
-COLORPICKER_LastColorRecentText.Size = UDim2.new(0,82,0,33)
-COLORPICKER_LastColorRecentText.Font = Enum.Font.RobotoMono
-COLORPICKER_LastColorRecentText.Text = "Recent:"
-COLORPICKER_LastColorRecentText.TextColor3 = Color3.fromRGB(86,86,86)
-COLORPICKER_LastColorRecentText.TextSize = 12
-COLORPICKER_LastColorRecentText.TextStrokeTransparency = 1
-COLORPICKER_LastColorRecentText.TextXAlignment = Enum.TextXAlignment.Left
-
-local COLORPICKER_LastColorLastColor1 = CreateLastColor(1, UDim2.new(0.589,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
-local COLORPICKER_LastColorLastColor2 = CreateLastColor(2, UDim2.new(0.671,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
-local COLORPICKER_LastColorLastColor3 = CreateLastColor(3, UDim2.new(0.753,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
-local COLORPICKER_LastColorLastColor4 = CreateLastColor(4, UDim2.new(0.835,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
-local COLORPICKER_LastColorLastColor5 = CreateLastColor(5, UDim2.new(0.917,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
-
-local COLORPICKER_CurrentColorFrame = Instance.new("Frame")
-COLORPICKER_CurrentColorFrame.Parent = COLORPICKER_MainFrame
-COLORPICKER_CurrentColorFrame.Name = "CurrentColor"
-COLORPICKER_CurrentColorFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-COLORPICKER_CurrentColorFrame.BorderSizePixel = 0
-COLORPICKER_CurrentColorFrame.Position = UDim2.new(0.426,0,0.329,0)
-COLORPICKER_CurrentColorFrame.Size = UDim2.new(0,43,0,166)
-COLORPICKER_CurrentColorFrame.ZIndex = 1
-
-local COLORPICKER_CurrentColorFrameCorner = Instance.new("UICorner")
-COLORPICKER_CurrentColorFrameCorner.Parent = COLORPICKER_CurrentColorFrame
-COLORPICKER_CurrentColorFrameCorner.CornerRadius = UDim.new(0,4)
-
-local COLORPICKER_CurrentColorFrameStroke1 = Instance.new("UIStroke")
-COLORPICKER_CurrentColorFrameStroke1.Parent = COLORPICKER_CurrentColorFrame
-COLORPICKER_CurrentColorFrameStroke1.Color = Color3.fromRGB(65,65,65)
-COLORPICKER_CurrentColorFrameStroke1.Thickness = 2
-COLORPICKER_CurrentColorFrameStroke1.ZIndex = 1
-
-local COLORPICKER_CurrentColorFrameStroke2 = Instance.new("UIStroke")
-COLORPICKER_CurrentColorFrameStroke2.Parent = COLORPICKER_CurrentColorFrame
-COLORPICKER_CurrentColorFrameStroke2.Color = Color3.fromRGB(0,0,0)
-COLORPICKER_CurrentColorFrameStroke2.Thickness = 1
-COLORPICKER_CurrentColorFrameStroke2.Transparency = 0.57
-COLORPICKER_CurrentColorFrameStroke2.ZIndex = 2
-
-local COLORPICKER_ColorSelectorFrame = Instance.new("Frame")
-COLORPICKER_ColorSelectorFrame.Parent = COLORPICKER_MainFrame
-COLORPICKER_ColorSelectorFrame.Name = "ColorSelector"
-COLORPICKER_ColorSelectorFrame.BackgroundColor3 = Color3.fromRGB(209,209,209)
-COLORPICKER_ColorSelectorFrame.Position = UDim2.new(0.526,0,0.199,0)
-COLORPICKER_ColorSelectorFrame.Size = UDim2.new(0,19,0,219)
-COLORPICKER_ColorSelectorFrame.ZIndex = 1
-
-local COLORPICKER_ColorSelectorFrameCorner = Instance.new("UICorner")
-COLORPICKER_ColorSelectorFrameCorner.Parent = COLORPICKER_ColorSelectorFrame
-COLORPICKER_ColorSelectorFrameCorner.CornerRadius = UDim.new(0,4)
-
-local COLORPICKER_ColorSelectorFrameGradient = Instance.new("UIGradient")
-COLORPICKER_ColorSelectorFrameGradient.Parent = COLORPICKER_ColorSelectorFrame
-COLORPICKER_ColorSelectorFrameGradient.Rotation = 90
--- There all colors gradient
-
-local COLORPICKER_ColorSelectorFrameStroke1 = Instance.new("UIStroke")
-COLORPICKER_ColorSelectorFrameStroke1.Parent = COLORPICKER_ColorSelectorFrame
-COLORPICKER_ColorSelectorFrameStroke1.Color	= Color3.fromRGB(65,65,65)
-COLORPICKER_ColorSelectorFrameStroke1.Thickness = 2
-COLORPICKER_ColorSelectorFrameStroke1.ZIndex = 1
-
-local COLORPICKER_ColorSelectorFrameStroke2 = Instance.new("UIStroke")
-COLORPICKER_ColorSelectorFrameStroke2.Parent = COLORPICKER_ColorSelectorFrame
-COLORPICKER_ColorSelectorFrameStroke2.Color	= Color3.fromRGB(0,0,0)
-COLORPICKER_ColorSelectorFrameStroke2.Thickness = 1
-COLORPICKER_ColorSelectorFrameStroke2.Transparency = 0.57
-COLORPICKER_ColorSelectorFrameStroke2.ZIndex = 2
-
-local COLORPICKER_ColorSelectorFrameSelectLine = Instance.new("Frame")
-COLORPICKER_ColorSelectorFrameSelectLine.Parent = COLORPICKER_ColorSelectorFrame
-COLORPICKER_ColorSelectorFrameSelectLine.Name = "SelectLine"
-COLORPICKER_ColorSelectorFrameSelectLine.BackgroundColor3 = Color3.fromRGB(65,65,65)
-COLORPICKER_ColorSelectorFrameSelectLine.Position = UDim2.new(0,0,0.74,0)
-COLORPICKER_ColorSelectorFrameSelectLine.Size = UDim2.new(0,19,0,1)
-COLORPICKER_ColorSelectorFrameSelectLine.ZIndex = 1
-
-local COLORPICKER_ColorSelectorFrameSelectLineStroke = Instance.new("UIStroke")
-COLORPICKER_ColorSelectorFrameSelectLineStroke.Parent = COLORPICKER_ColorSelectorFrameSelectLine
-COLORPICKER_ColorSelectorFrameSelectLineStroke.Color = Color3.fromRGB(0,0,0)
-COLORPICKER_ColorSelectorFrameSelectLineStroke.Thickness = 1.1
-COLORPICKER_ColorSelectorFrameSelectLineStroke.Transparency = 0.4
-COLORPICKER_ColorSelectorFrameSelectLineStroke.ZIndex = 1
-
-local COLORPICKER_HeaderBgFrame = Instance.new("Frame")
-COLORPICKER_HeaderBgFrame.Parent = COLORPICKER_MainFrame
-COLORPICKER_HeaderBgFrame.Name = "HeaderBg"
-COLORPICKER_HeaderBgFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
-COLORPICKER_HeaderBgFrame.Position = UDim2.new(0,0,0,0)
-COLORPICKER_HeaderBgFrame.Size = UDim2.new(0,608,0,50)
-COLORPICKER_HeaderBgFrame.ZIndex = 5
-
-local COLORPICKER_HeaderBgFrameCorner = Instance.new("UICorner")
-COLORPICKER_HeaderBgFrameCorner.Parent = COLORPICKER_HeaderBgFrame
-COLORPICKER_HeaderBgFrameCorner.CornerRadius = UDim.new(0,4)
-
-local COLORPICKER_HeaderBgFrameGradient = Instance.new("UIGradient")
-COLORPICKER_HeaderBgFrameGradient.Parent = COLORPICKER_HeaderBgFrame
-COLORPICKER_HeaderBgFrameGradient.Rotation = -90
-COLORPICKER_HeaderBgFrameGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(95,95,95)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
-}
-
-local COLORPICKER_HeaderBgFrameStroke = Instance.new("UIStroke")
-COLORPICKER_HeaderBgFrameStroke.Parent = COLORPICKER_HeaderBgFrame
-COLORPICKER_HeaderBgFrameStroke.Color = Color3.fromRGB(150,64,255)
-COLORPICKER_HeaderBgFrameStroke.Thickness = 1
-COLORPICKER_HeaderBgFrameStroke.ZIndex = 3
-
-local COLORPICKER_HeaderBgFrameStrokeGradient = Instance.new("UIGradient")
-COLORPICKER_HeaderBgFrameStrokeGradient.Parent = COLORPICKER_HeaderBgFrameStroke
-COLORPICKER_HeaderBgFrameStrokeGradient.Rotation = -90
-COLORPICKER_HeaderBgFrameStrokeGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0,0),
-	NumberSequenceKeypoint.new(0.05,1,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-local COLORPICKER_HeaderBgFrameBgGlow = Instance.new("Frame")
-COLORPICKER_HeaderBgFrameBgGlow.Parent = COLORPICKER_MainFrame
-COLORPICKER_HeaderBgFrameBgGlow.BackgroundColor3 = Color3.fromRGB(150,64,255)
-COLORPICKER_HeaderBgFrameBgGlow.BackgroundTransparency = 0.5
-COLORPICKER_HeaderBgFrameBgGlow.ZIndex = 5
-COLORPICKER_HeaderBgFrameBgGlow.Position = UDim2.new(0,0,0.119,0)
-COLORPICKER_HeaderBgFrameBgGlow.Size = UDim2.new(0,608,0,17)
-COLORPICKER_HeaderBgFrameBgGlow.Name = "HederBgGlow"
-
-local COLORPICKER_HeaderBgFrameBgGlowGradient = Instance.new("UIGradient")
-COLORPICKER_HeaderBgFrameBgGlowGradient.Parent = COLORPICKER_HeaderBgFrameBgGlow
-COLORPICKER_HeaderBgFrameBgGlowGradient.Rotation = 90
-COLORPICKER_HeaderBgFrameBgGlowGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,0.732,0),
-	NumberSequenceKeypoint.new(1,1,0)
-}
-
-local COLORPICKER_CloseButton = Instance.new("ImageButton")
-COLORPICKER_CloseButton.Parent = COLORPICKER_MainFrame
-COLORPICKER_CloseButton.Name = "CloseButton"
-COLORPICKER_CloseButton.Image = _closeImageId
-COLORPICKER_CloseButton.BackgroundTransparency = 1
-COLORPICKER_CloseButton.Position = UDim2.new(0.929,0,0.017,0)
-COLORPICKER_CloseButton.Size = UDim2.new(0,36,0,36)
-COLORPICKER_CloseButton.ImageTransparency = 0.84
-COLORPICKER_CloseButton.ImageColor3 = Color3.fromRGB(255,255,255)
-
-local COLORPICKER_MoveBackButton = Instance.new("ImageButton")
-COLORPICKER_MoveBackButton.Parent = COLORPICKER_MainFrame
-COLORPICKER_MoveBackButton.Name = "MoveBackButton"
-COLORPICKER_MoveBackButton.Position = UDim2.new(0.426,0,0.261,0)
-COLORPICKER_MoveBackButton.Size = UDim2.new(0,20,0,20)
-COLORPICKER_MoveBackButton.Image = _moveImageId
-COLORPICKER_MoveBackButton.Rotation = 180
-COLORPICKER_MoveBackButton.ImageTransparency = 0.25
-COLORPICKER_MoveBackButton.ZIndex = 1
-COLORPICKER_MoveBackButton.BackgroundTransparency = 1
-
-local COLORPICKER_MoveForwardButton = Instance.new("ImageButton")
-COLORPICKER_MoveForwardButton.Parent = COLORPICKER_MainFrame
-COLORPICKER_MoveForwardButton.Name = "MoveForwardButton"
-COLORPICKER_MoveForwardButton.Position = UDim2.new(0.464,0,0.261,0)
-COLORPICKER_MoveForwardButton.Size = UDim2.new(0,20,0,20)
-COLORPICKER_MoveForwardButton.Image = _moveImageId
-COLORPICKER_MoveForwardButton.Rotation = 0
-COLORPICKER_MoveForwardButton.ImageTransparency = 0.25
-COLORPICKER_MoveForwardButton.ZIndex = 1
-COLORPICKER_MoveForwardButton.BackgroundTransparency = 1
-
-local COLORPICKER_RandomColor = Instance.new("ImageButton")
-COLORPICKER_RandomColor.Parent = COLORPICKER_MainFrame
-COLORPICKER_RandomColor.Name = "RandomColorButton"
-COLORPICKER_RandomColor.BackgroundTransparency = 1
-COLORPICKER_RandomColor.Position = UDim2.new(0.464,0,0.201,0)
-COLORPICKER_RandomColor.Size = UDim2.new(0,20,0,20)
-COLORPICKER_RandomColor.ImageTransparency = 0.25
-COLORPICKER_RandomColor.Image = _randomImageId
-
-local COLORPICKER_ResetToDefault = Instance.new("ImageButton")
-COLORPICKER_ResetToDefault.Parent = COLORPICKER_MainFrame
-COLORPICKER_ResetToDefault.Name = "ResetToDefaultButton"
-COLORPICKER_ResetToDefault.BackgroundTransparency = 1
-COLORPICKER_ResetToDefault.Position = UDim2.new(0.426,0,0.201,0)
-COLORPICKER_ResetToDefault.Size = UDim2.new(0,20,0,20)
-COLORPICKER_ResetToDefault.ZIndex = 1
-COLORPICKER_ResetToDefault.ImageTransparency = 0.25
-COLORPICKER_ResetToDefault.Image = _resetImageId
-
-local COLORPICKER_WindowDesc = Instance.new("TextLabel")
-COLORPICKER_WindowDesc.Parent = COLORPICKER_MainFrame
-COLORPICKER_WindowDesc.BackgroundTransparency = 1
-COLORPICKER_WindowDesc.ZIndex = 5
-COLORPICKER_WindowDesc.Position = UDim2.new(0.016,0,0.042,0)
-COLORPICKER_WindowDesc.Size = UDim2.new(0,97,0,32)
-COLORPICKER_WindowDesc.Name = "WindowDesc"
-COLORPICKER_WindowDesc.Font = Enum.Font.RobotoMono
-COLORPICKER_WindowDesc.Text = "from: nil"
-COLORPICKER_WindowDesc.TextTransparency = 0.65
-COLORPICKER_WindowDesc.TextSize = 12
-COLORPICKER_WindowDesc.TextColor3 = Color3.fromRGB(255,255,255)
-COLORPICKER_WindowDesc.TextXAlignment = Enum.TextXAlignment.Left
-
-local COLORPICKER_WindowName = Instance.new("TextLabel")
-COLORPICKER_WindowName.Parent = COLORPICKER_MainFrame
-COLORPICKER_WindowName.Name = "WindowName"
-COLORPICKER_WindowName.BackgroundTransparency = 1
-COLORPICKER_WindowName.Position = UDim2.new(0.016,0,0)
-COLORPICKER_WindowName.Size = UDim2.new(0,97,0,32)
-COLORPICKER_WindowName.TextXAlignment = Enum.TextXAlignment.Left
-COLORPICKER_WindowName.TextSize = 16
-COLORPICKER_WindowName.Font = Enum.Font.RobotoMono
-COLORPICKER_WindowName.Text = "Color picker"
-COLORPICKER_WindowName.TextColor3 = Color3.fromRGB(255,255,255)
-COLORPICKER_WindowName.TextTransparency = 0.21
-COLORPICKER_WindowName.ZIndex = 5
-
-local COLORPCIKER_OtherText = Instance.new("TextLabel")
-COLORPCIKER_OtherText.Parent = COLORPICKER_MainFrame
-COLORPCIKER_OtherText.Name = "OtherText"
-COLORPCIKER_OtherText.BackgroundTransparency = 1
-COLORPCIKER_OtherText.Position = UDim2.new(0.587,0,0.312,0)
-COLORPCIKER_OtherText.Size = UDim2.new(0,82,0,30)
-COLORPCIKER_OtherText.ZIndex = 5
-COLORPCIKER_OtherText.Font = Enum.Font.RobotoMono
-COLORPCIKER_OtherText.TextColor3 = Color3.fromRGB(86,86,86)
-COLORPCIKER_OtherText.TextSize = 12
-COLORPCIKER_OtherText.Text = "Other: [no data, under development]"
-COLORPCIKER_OtherText.TextXAlignment = Enum.TextXAlignment.Left
-
-------------------------------------------------
---                                 Notifications
-------------------------------------------------
-
-local NOTIFICATIONS_MainFrame = Instance.new("Frame")
-NOTIFICATIONS_MainFrame.Parent = NotificationsGui
-NOTIFICATIONS_MainFrame.Name = "NotificationBackground"
-NOTIFICATIONS_MainFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
-NOTIFICATIONS_MainFrame.Position = UDim2.new(0.615,0,0.902,0)
-NOTIFICATIONS_MainFrame.Size = UDim2.new(0,253,0,65)
-NOTIFICATIONS_MainFrame.ZIndex = 1
-
-local NOTIFICATIONS_MainFrameCorner = Instance.new("UICorner")
-NOTIFICATIONS_MainFrameCorner.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_MainFrameCorner.CornerRadius = UDim.new(0,4)
-
-local NOTIFICATIONS_MainFrameGradient = Instance.new("UIGradient")
-NOTIFICATIONS_MainFrameGradient.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_MainFrameGradient.Rotation = -90
-NOTIFICATIONS_MainFrameGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0,Color3.fromRGB(95,95,95)),
-	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
-}
-
-local NOTIFICATIONS_MainFrameStroke1 = Instance.new("UIStroke")
-NOTIFICATIONS_MainFrameStroke1.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_MainFrameStroke1.Color = Color3.fromRGB(56,56,56)
-NOTIFICATIONS_MainFrameStroke1.Thickness = 2
-NOTIFICATIONS_MainFrame.ZIndex = 0
-
-local NOTIFICATIONS_MainFrameStroke2 = Instance.new("UIStroke")
-NOTIFICATIONS_MainFrameStroke2.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_MainFrameStroke2.Color = Color3.fromRGB(0,0,0)
-NOTIFICATIONS_MainFrameStroke2.Thickness = 1
-NOTIFICATIONS_MainFrameStroke2.Transparency = 0.31
-NOTIFICATIONS_MainFrameStroke2.ZIndex = 2
-
-local NOTIFICATIONS_DragLine = Instance.new("Frame")
-NOTIFICATIONS_DragLine.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_DragLine.Name = "DragLine"
-NOTIFICATIONS_DragLine.Position = UDim2.new(0.024,0,0.169,0)
-NOTIFICATIONS_DragLine.Size = UDim2.new(0,5,0,43)
-NOTIFICATIONS_DragLine.ZIndex = 1
-NOTIFICATIONS_DragLine.BackgroundColor3 = Color3.fromRGB(255,255,255)
-
-local NOTIFICATIONS_DragLineCorner = Instance.new("UICorner")
-NOTIFICATIONS_DragLineCorner.Parent = NOTIFICATIONS_DragLine
-NOTIFICATIONS_DragLineCorner.CornerRadius = UDim.new(0,20)
-
-local NOTIFICATIONS_DragLineGradient = Instance.new("UIGradient")
-NOTIFICATIONS_DragLineGradient.Parent = NOTIFICATIONS_DragLine
-NOTIFICATIONS_DragLineGradient.Rotation = 90
-NOTIFICATIONS_DragLineGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0,Color3.fromRGB(146,74,255)),
-	ColorSequenceKeypoint.new(1,Color3.fromRGB(80,33,152))
-}
-
-local NOTIFICATIONS_DragLineStroke = Instance.new("UIStroke")
-NOTIFICATIONS_DragLineStroke.Parent = NOTIFICATIONS_DragLine
-NOTIFICATIONS_DragLineStroke.Color = Color3.fromRGB(0,0,0)
-NOTIFICATIONS_DragLineStroke.Thickness = 1
-NOTIFICATIONS_DragLineStroke.Transparency = 0.72
-NOTIFICATIONS_DragLineStroke.ZIndex = 1
-
-local NOTIFICATIONS_TimeLine = Instance.new("Frame")
-NOTIFICATIONS_TimeLine.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_TimeLine.Name = "TimeLine"
-NOTIFICATIONS_TimeLine.BackgroundColor3 = Color3.fromRGB(150,64,255)
-NOTIFICATIONS_TimeLine.BackgroundTransparency = 0.45
-NOTIFICATIONS_TimeLine.Position = UDim2.new(0,0,0.975,0)
-NOTIFICATIONS_TimeLine.Size = UDim2.new(0,253,0,2)
-NOTIFICATIONS_TimeLine.ZIndex = 1
-
-local NOTIFICATIONS_TimeLineCorner = Instance.new("UICorner")
-NOTIFICATIONS_TimeLineCorner.Parent = NOTIFICATIONS_TimeLine
-NOTIFICATIONS_TimeLineCorner.CornerRadius = UDim.new(0,80)
-
-local NOTIFICATIONS_TimeLineGradient = Instance.new("UIGradient")
-NOTIFICATIONS_TimeLineGradient.Parent = NOTIFICATIONS_TimeLine
-NOTIFICATIONS_TimeLineGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0,Color3.fromRGB(137,98,255)),
-	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
-}
-
-local NOTIFICATIONS_TimeLineGlow = Instance.new("Frame")
-NOTIFICATIONS_TimeLineGlow.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_TimeLineGlow.Name = "TimeLineGlow"
-NOTIFICATIONS_TimeLineGlow.BackgroundColor3 = Color3.fromRGB(150,64,255)
-NOTIFICATIONS_TimeLineGlow.ZIndex = 5
-NOTIFICATIONS_TimeLineGlow.Position = UDim2.new(0,0,0.728,0)
-NOTIFICATIONS_TimeLineGlow.Size = UDim2.new(0,253,0,17)
-
-local NOTIFICATIONS_TimeLineGlowGradient = Instance.new("UIGradient")
-NOTIFICATIONS_TimeLineGlowGradient.Parent = NOTIFICATIONS_TimeLineGlow
-NOTIFICATIONS_TimeLineGlowGradient.Rotation = 90
-NOTIFICATIONS_TimeLineGlowGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0,1,0),
-	NumberSequenceKeypoint.new(1,0.88,0)
-}
-
-local NOTIFICATIONS_CloseButton = Instance.new("ImageButton")
-NOTIFICATIONS_CloseButton.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_CloseButton.Name = "CloseButton"
-NOTIFICATIONS_CloseButton.BackgroundTransparency = 1
-NOTIFICATIONS_CloseButton.Position = UDim2.new(0.91,0,0,0)
-NOTIFICATIONS_CloseButton.Size = UDim2.new(0,22,0,22)
-NOTIFICATIONS_CloseButton.ImageTransparency = 0.84
-NOTIFICATIONS_CloseButton.Image = _closeImageId
-
-local NOTIFICATIONS_FreezeButton = Instance.new("ImageButton")
-NOTIFICATIONS_FreezeButton.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_FreezeButton.Name = "FreezeButton"
-NOTIFICATIONS_FreezeButton.BackgroundTransparency = 1
-NOTIFICATIONS_FreezeButton.Position = UDim2.new(0.822,0,0,0)
-NOTIFICATIONS_FreezeButton.Size = UDim2.new(0,22,0,22)
-NOTIFICATIONS_FreezeButton.ImageTransparency = 1
-
-local NOTIFICATIONS_FreezeButtonIcon = Instance.new("ImageLabel")
-NOTIFICATIONS_FreezeButtonIcon.Parent = NOTIFICATIONS_FreezeButton
-NOTIFICATIONS_FreezeButtonIcon.Name = "FreezeButtonIcon"
-NOTIFICATIONS_FreezeButtonIcon.Position = UDim2.new(0.5,0,0.5,0)
-NOTIFICATIONS_FreezeButtonIcon.Size = UDim2.new(0,13,0,13)
-NOTIFICATIONS_FreezeButtonIcon.Image = _freezeImageId
-NOTIFICATIONS_FreezeButtonIcon.ImageTransparency = 0.84
-NOTIFICATIONS_FreezeButtonIcon.BackgroundTransparency = 1
-NOTIFICATIONS_FreezeButtonIcon.AnchorPoint = Vector2.new(.5,.5)
-
-local NOTIFICATIONS_TimeLeft = Instance.new("TextLabel")
-NOTIFICATIONS_TimeLeft.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_TimeLeft.Name = "TimeLeft"
-NOTIFICATIONS_TimeLeft.BackgroundTransparency = 1
-NOTIFICATIONS_TimeLeft.Position = UDim2.new(0.834,0,0.646,0)
-NOTIFICATIONS_TimeLeft.Size = UDim2.new(0,35,0,23)
-NOTIFICATIONS_TimeLeft.ZIndex = 1
-NOTIFICATIONS_TimeLeft.Text = "3s"
-NOTIFICATIONS_TimeLeft.Font = Enum.Font.RobotoMono
-NOTIFICATIONS_TimeLeft.TextColor3 = Color3.fromRGB(63,63,63)
-NOTIFICATIONS_TimeLeft.TextSize = 11
-NOTIFICATIONS_TimeLeft.TextXAlignment = Enum.TextXAlignment.Right
-
-local NOTIFICATIONS_NotificationName = Instance.new("TextLabel")
-NOTIFICATIONS_NotificationName.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_NotificationName.Name = "NotificationName"
-NOTIFICATIONS_NotificationName.BackgroundTransparency = 1
-NOTIFICATIONS_NotificationName.ZIndex = 1
-NOTIFICATIONS_NotificationName.Position = UDim2.new(0.075,0,0.031,0)
-NOTIFICATIONS_NotificationName.Size = UDim2.new(0,72,0,23)
-NOTIFICATIONS_NotificationName.Font = Enum.Font.RobotoMono
-NOTIFICATIONS_NotificationName.Text = "Notification name"
-NOTIFICATIONS_NotificationName.TextSize = 14
-NOTIFICATIONS_NotificationName.TextColor3 = Color3.fromRGB(255,255,255)
-NOTIFICATIONS_NotificationName.TextStrokeTransparency = 0.42
-NOTIFICATIONS_NotificationName.TextStrokeColor3 = Color3.fromRGB(0,0,0)
-NOTIFICATIONS_NotificationName.TextXAlignment = Enum.TextXAlignment.Left
-
-local NOTIFICATIONS_NotificationDescription = Instance.new("TextLabel")
-NOTIFICATIONS_NotificationDescription.Parent = NOTIFICATIONS_MainFrame
-NOTIFICATIONS_NotificationDescription.Name = "NotificationDescription"
-NOTIFICATIONS_NotificationDescription.BackgroundTransparency = 1
-NOTIFICATIONS_NotificationDescription.ZIndex = 1
-NOTIFICATIONS_NotificationDescription.Position = UDim2.new(0.075,0,0.262,0)
-NOTIFICATIONS_NotificationDescription.Size = UDim2.new(0,182,0,37)
-NOTIFICATIONS_NotificationDescription.Font = Enum.Font.RobotoMono
-NOTIFICATIONS_NotificationDescription.Text = "Notification description"
-NOTIFICATIONS_NotificationDescription.TextColor3 = Color3.fromRGB(161,161,161)
-NOTIFICATIONS_NotificationDescription.TextSize = 12
-NOTIFICATIONS_NotificationDescription.TextXAlignment = Enum.TextXAlignment.Left
-
-local Category1, c1TabsHolderFrame = createTabCategory("Main", TABS_TabsBg)
-local Tab1, tab1Scrolling = createTab("Player", c1TabsHolderFrame, MAIN_TabsContentFolder)
-local Tab2, tab2Scrolling = createTab("World", c1TabsHolderFrame, MAIN_TabsContentFolder)
-local section = createSection("Main", tab1Scrolling, "left")
-local button = createButton("button", section)
-local dropdown = createDropdown("dropdown", section, -1)
-local toggle = createToggle("toggle", section)
-local colorPicker = createColorPicker("color picker", section)
-local section2 = createSection("Player", tab1Scrolling, "right")
-local textbox = createTextbox("textbox", section2)
-local slider = createSlider("slider", section2)
-local keybind = createKeybind("keybind", section2, "H")
-
-tab1Scrolling.Visible = true
-
---──────────────────────────────────────────────────--
+local function buildRootGuis()
+    --──────────────────|> Build core ui
+    --──────────────────────────────────────────────────--
+
+    local MainGui = Instance.new("ScreenGui")
+    MainGui.Parent = Default_Parent
+    MainGui.Enabled = true
+    MainGui.IgnoreGuiInset = true
+    MainGui.ResetOnSpawn = false
+    MainGui.DisplayOrder = 0
+    MainGui.Name = GenerateRandomName(10)
+
+    local ColorPickerGui = Instance.new("ScreenGui")
+    ColorPickerGui.Parent = Default_Parent
+    ColorPickerGui.Enabled = false 
+    ColorPickerGui.IgnoreGuiInset = true
+    ColorPickerGui.ResetOnSpawn = false
+    ColorPickerGui.DisplayOrder = 1
+    ColorPickerGui.Name = "ColorPickerGui"
+
+    local NotificationsGui = Instance.new("ScreenGui")
+    NotificationsGui.Parent = Default_Parent
+    NotificationsGui.Enabled = true
+    NotificationsGui.IgnoreGuiInset = true
+    NotificationsGui.ResetOnSpawn = false
+    NotificationsGui.DisplayOrder = 100
+    NotificationsGui.Name = "NotificationsGui"
+
+    return {
+        MainGui = MainGui,
+        ColorPickerGui = ColorPickerGui,
+        NotificationsGui = NotificationsGui,
+    }
+end
+
+local function buildMainWindow(MainGui)
+    ------------------------------------------------
+    --                                         Main
+    ------------------------------------------------
+
+    local MAIN_MainBgFrame = Instance.new("Frame")
+    MAIN_MainBgFrame.Parent = MainGui
+    MAIN_MainBgFrame.AnchorPoint = Vector2.new(0.5,0.5)
+    MAIN_MainBgFrame.Position = UDim2.new(0.5,0,0.5,0)
+    MAIN_MainBgFrame.Size = UDim2.new(0,767,0,484)
+    MAIN_MainBgFrame.ZIndex = 0
+    MAIN_MainBgFrame.BackgroundTransparency = 0
+    MAIN_MainBgFrame.BackgroundColor3 = Color3.fromRGB(16,16,16)
+    MAIN_MainBgFrame.Name = "MainBg"
+
+    local MAIN_TabsContentFolder = Instance.new("Folder")
+    MAIN_TabsContentFolder.Parent =  MAIN_MainBgFrame
+    MAIN_TabsContentFolder.Name = "TabsContentFolder"
+
+    local MAIN_MainDarkFrame = Instance.new("Frame")
+    MAIN_MainDarkFrame.Parent = MainGui
+    MAIN_MainDarkFrame.BackgroundTransparency = 0.35
+    MAIN_MainDarkFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    MAIN_MainDarkFrame.ZIndex = -10000
+    MAIN_MainDarkFrame.Position = UDim2.new(0,0,0,0)
+    MAIN_MainDarkFrame.Size = UDim2.new(1,0,1,0)
+    MAIN_MainDarkFrame.Interactable = true
+
+    local MAIN_MainBgFrameCorner = Instance.new("UICorner")
+    MAIN_MainBgFrameCorner.Parent = MAIN_MainBgFrame
+    MAIN_MainBgFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local MAIN_MainBgFrameGraident = Instance.new("UIGradient")
+    MAIN_MainBgFrameGraident.Parent = MAIN_MainBgFrame
+    MAIN_MainBgFrameGraident.Rotation = -90
+    MAIN_MainBgFrameGraident.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0,Color3.fromRGB(0,0,0)),
+    	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
+    }
+
+    local MAIN_HeaderContentFolder = Instance.new("Folder")
+    MAIN_HeaderContentFolder.Parent = MAIN_MainBgFrame
+    MAIN_HeaderContentFolder.Name = "HeaderContent"
+
+    local MAIN_SearchFrame = Instance.new("Frame")
+    MAIN_SearchFrame.Parent = MAIN_MainBgFrame
+    MAIN_SearchFrame.Position = UDim2.new(0.269,0,0.017,0)
+    MAIN_SearchFrame.Size = UDim2.new(0,355,0,31)
+    MAIN_SearchFrame.ZIndex = 1
+    MAIN_SearchFrame.BackgroundTransparency = 0
+    MAIN_SearchFrame.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    MAIN_SearchFrame.Name = "SearchFrame"
+
+    local MAIN_SearchFrameCorner = Instance.new("UICorner")
+    MAIN_SearchFrameCorner.Parent = MAIN_SearchFrame
+    MAIN_SearchFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local MAIN_SearchFrameGradient = Instance.new("UIGradient")
+    MAIN_SearchFrameGradient.Parent = MAIN_SearchFrame
+    MAIN_SearchFrameGradient.Rotation = 90
+    MAIN_SearchFrameGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0,Color3.fromRGB(27,27,27)),
+    	ColorSequenceKeypoint.new(1,Color3.fromRGB(29,29,29))
+    }
+
+    local MAIN_SearchFrameStroke = Instance.new("UIStroke")
+    MAIN_SearchFrameStroke.Parent = MAIN_SearchFrame
+    MAIN_SearchFrameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    MAIN_SearchFrameStroke.Color = Color3.fromRGB(40,40,40)
+    MAIN_SearchFrameStroke.Thickness = 1
+    MAIN_SearchFrameStroke.Transparency = 0
+    MAIN_SearchFrameStroke.ZIndex = 1
+    MAIN_SearchFrameStroke.LineJoinMode = Enum.LineJoinMode.Round
+
+    local MAIN_SearchFrameSearchImage = Instance.new("ImageLabel")
+    MAIN_SearchFrameSearchImage.Parent = MAIN_SearchFrame
+    MAIN_SearchFrameSearchImage.BackgroundTransparency = 1
+    MAIN_SearchFrameSearchImage.Position = UDim2.new(0.017,0,0.194,0)
+    MAIN_SearchFrameSearchImage.Size = UDim2.new(0,20,0,20)
+    MAIN_SearchFrameSearchImage.Image = _searchImageId
+    MAIN_SearchFrameSearchImage.ImageTransparency = 0.6
+    MAIN_SearchFrameSearchImage.Name = "SearchImage"
+
+    local MAIN_SearchFrameTextBox = Instance.new("TextBox")
+    MAIN_SearchFrameTextBox.Parent = MAIN_SearchFrame
+    MAIN_SearchFrameTextBox.BackgroundTransparency = 1
+    MAIN_SearchFrameTextBox.Size = UDim2.new(1,0,1,0)
+    MAIN_SearchFrameTextBox.Position = UDim2.new(0,0,0,0)
+    MAIN_SearchFrameTextBox.ZIndex = 1
+    MAIN_SearchFrameTextBox.Font = Enum.Font.RobotoMono
+    MAIN_SearchFrameTextBox.TextColor3 = Color3.fromRGB(255,255,255)
+    MAIN_SearchFrameTextBox.TextSize = 14
+    MAIN_SearchFrameTextBox.Text = ""
+    MAIN_SearchFrameTextBox.PlaceholderText = "Search"
+    MAIN_SearchFrameTextBox.Name = "SearchTextBox"
+    MAIN_SearchFrameTextBox.TextTransparency = 0.75
+
+    local MAIN_SearchFrameTextBoxStroke = Instance.new("UIStroke")
+    MAIN_SearchFrameTextBoxStroke.Parent = MAIN_SearchFrameTextBox
+    MAIN_SearchFrameTextBoxStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    MAIN_SearchFrameTextBoxStroke.Thickness = 1
+    MAIN_SearchFrameTextBoxStroke.LineJoinMode = Enum.LineJoinMode.Round
+    MAIN_SearchFrameTextBoxStroke.Color = Color3.fromRGB(33,33,33)
+
+    local MAIN_HeaderBgFrame = Instance.new("Frame")
+    MAIN_HeaderBgFrame.Parent = MAIN_HeaderContentFolder
+    MAIN_HeaderBgFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
+    MAIN_HeaderBgFrame.BackgroundTransparency = 0
+    MAIN_HeaderBgFrame.Position = UDim2.new(0,0,0,0)
+    MAIN_HeaderBgFrame.Size = UDim2.new(0,767,0,48)
+    MAIN_HeaderBgFrame.ZIndex = 0
+    MAIN_HeaderBgFrame.Name = "HeaderBgFrame"
+
+    local MAIN_HeaderBgFrameCorner = Instance.new("UICorner")
+    MAIN_HeaderBgFrameCorner.Parent = MAIN_HeaderBgFrame
+    MAIN_HeaderBgFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local MAIN_HeaderBgFrameGradient = Instance.new("UIGradient")
+    MAIN_HeaderBgFrameGradient.Parent = MAIN_HeaderBgFrame
+    MAIN_HeaderBgFrameGradient.Rotation = -90
+    MAIN_HeaderBgFrameGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0,Color3.fromRGB(95,95,95)),
+    	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
+    }
+
+    local MAIN_HeaderBgFrameStroke = Instance.new("UIStroke")
+    MAIN_HeaderBgFrameStroke.Parent = MAIN_HeaderBgFrame
+    MAIN_HeaderBgFrameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    MAIN_HeaderBgFrameStroke.Color = Color3.fromRGB(150,64,255)
+    MAIN_HeaderBgFrameStroke.LineJoinMode = Enum.LineJoinMode.Round
+    MAIN_HeaderBgFrameStroke.Thickness = 1
+    MAIN_HeaderBgFrameStroke.ZIndex = 3
+
+    local MAIN_HeaderBgFrameStrokeGradient = Instance.new("UIGradient")
+    MAIN_HeaderBgFrameStrokeGradient.Parent = MAIN_HeaderBgFrameStroke
+    MAIN_HeaderBgFrameStrokeGradient.Rotation = -90
+    MAIN_HeaderBgFrameStrokeGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0,0),
+    	NumberSequenceKeypoint.new(0.05,1,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    local MAIN_CloseButton = Instance.new("ImageButton")
+    MAIN_CloseButton.Parent = MAIN_HeaderContentFolder
+    MAIN_CloseButton.BackgroundTransparency = 1
+    MAIN_CloseButton.Position = UDim2.new(0.944,0,0.012,0)
+    MAIN_CloseButton.Size = UDim2.new(0,36,0,36)
+    MAIN_CloseButton.ZIndex = 1
+    MAIN_CloseButton.ImageTransparency = 0.84
+    MAIN_CloseButton.Name = "CloseButton"
+    MAIN_CloseButton.Image = _closeImageId
+
+    local MAIN_ScriptImage = Instance.new("ImageLabel")
+    MAIN_ScriptImage.Parent = MAIN_HeaderContentFolder
+    MAIN_ScriptImage.BackgroundTransparency = 1
+    MAIN_ScriptImage.Position = UDim2.new(0,0,0.013,0)
+    MAIN_ScriptImage.Size = UDim2.new(0,38,0,38)
+    MAIN_ScriptImage.Image = _scriptIcon
+    MAIN_ScriptImage.Name = "ScriptImage"
+    MAIN_ScriptImage.ImageTransparency = 0
+    MAIN_ScriptImage.ZIndex = 5
+
+    local MAIN_ScriptName = Instance.new("TextLabel")
+    MAIN_ScriptName.Parent = MAIN_HeaderContentFolder
+    MAIN_ScriptName.BackgroundTransparency = 1
+    MAIN_ScriptName.Position = UDim2.new(0.05,0,0.012,0)
+    MAIN_ScriptName.Size = UDim2.new(0,97,0,34)
+    MAIN_ScriptName.ZIndex = 5
+    MAIN_ScriptName.Font = Enum.Font.RobotoMono
+    MAIN_ScriptName.Text = _scriptName
+    MAIN_ScriptName.TextSize = 20
+    MAIN_ScriptName.TextColor3 = Color3.fromRGB(255,255,255)
+    MAIN_ScriptName.TextXAlignment = Enum.TextXAlignment.Left
+    MAIN_ScriptName.Name = "ScriptName"
+
+    local MAIN_ScriptNameStroke = Instance.new("UIStroke")
+    MAIN_ScriptNameStroke.Parent = MAIN_ScriptName
+    MAIN_ScriptNameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    MAIN_ScriptNameStroke.Thickness = 0.4
+    MAIN_ScriptNameStroke.Color = Color3.fromRGB(255,255,255)
+    MAIN_ScriptNameStroke.LineJoinMode = Enum.LineJoinMode.Round
+
+    local MAIN_ScriptNameStrokeGradient = Instance.new("UIGradient")
+    MAIN_ScriptNameStrokeGradient.Parent = MAIN_ScriptNameStroke
+    MAIN_ScriptNameStrokeGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0,Color3.fromRGB(150,64,255)),
+    	ColorSequenceKeypoint.new(1,Color3.fromRGB(238,48,255))
+    }
+    MAIN_ScriptNameStrokeGradient.Rotation = -50
+
+    local MAIN_ScriptNameShadow = Instance.new("TextLabel")
+    MAIN_ScriptNameShadow.Parent = MAIN_ScriptName
+    MAIN_ScriptNameShadow.BackgroundTransparency = 1
+    MAIN_ScriptNameShadow.Position = UDim2.new(0,0,-0.1,0)
+    MAIN_ScriptNameShadow.Size = UDim2.new(0,96,0,47)
+    MAIN_ScriptNameShadow.ZIndex = 5
+    MAIN_ScriptNameShadow.Font = Enum.Font.RobotoMono
+    MAIN_ScriptNameShadow.Text = _scriptName
+    MAIN_ScriptNameShadow.TextSize = 20
+    MAIN_ScriptNameShadow.TextColor3 = Color3.fromRGB(0,0,0)
+    MAIN_ScriptNameShadow.TextXAlignment = Enum.TextXAlignment.Left
+    MAIN_ScriptNameShadow.Name = "TextShadow"
+
+    local MAIN_ScriptNameShadowGradient = Instance.new("UIGradient")
+    MAIN_ScriptNameShadowGradient.Parent = MAIN_ScriptNameShadow
+    MAIN_ScriptNameShadowGradient.Rotation = -90
+    MAIN_ScriptNameShadowGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0,0),
+    	NumberSequenceKeypoint.new(0.5,0.369,0),
+    	NumberSequenceKeypoint.new(1,0,0)
+    }
+
+    local MAIN_SettingsButton = Instance.new("ImageButton")
+    MAIN_SettingsButton.Parent = MAIN_HeaderContentFolder
+    MAIN_SettingsButton.Position = UDim2.new(0.74,0,0.024,0)
+    MAIN_SettingsButton.Size = UDim2.new(0,25,0,25)
+    MAIN_SettingsButton.BackgroundTransparency = 1
+    MAIN_SettingsButton.Image = _settingsImageId
+    MAIN_SettingsButton.Name = "SettingsButton"
+    MAIN_SettingsButton.ImageTransparency = 0.84
+
+    local MAIN_HeaderFrameStrokeGlow = Instance.new("Frame")
+    MAIN_HeaderFrameStrokeGlow.Parent = MAIN_HeaderContentFolder
+    MAIN_HeaderFrameStrokeGlow.Name = "HeaderStrokeGlow"
+    MAIN_HeaderFrameStrokeGlow.BackgroundColor3 = Color3.fromRGB(150,64,255)
+    MAIN_HeaderFrameStrokeGlow.BackgroundTransparency = 0.25
+    MAIN_HeaderFrameStrokeGlow.ZIndex = 5
+    MAIN_HeaderFrameStrokeGlow.Position = UDim2.new(0,0,0.1,0)
+    MAIN_HeaderFrameStrokeGlow.Size = UDim2.new(0,767,0,17)
+
+    local MAIN_HeaderFrameStrokeGlowGradient = Instance.new("UIGradient")
+    MAIN_HeaderFrameStrokeGlowGradient.Parent = MAIN_HeaderFrameStrokeGlow
+    MAIN_HeaderFrameStrokeGlowGradient.Rotation = 90
+    MAIN_HeaderFrameStrokeGlowGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0.727,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    ------------------------------------------------
+    --                                         Tabs
+    ------------------------------------------------
+
+    local TABS_TabsBg = Instance.new("Frame")
+    TABS_TabsBg.Parent = MAIN_MainBgFrame
+    TABS_TabsBg.Position = UDim2.new(0,0,0.097,0)
+    TABS_TabsBg.Size = UDim2.new(0,185,0,436)
+    TABS_TabsBg.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    TABS_TabsBg.Name = "TabsBg"
+    TABS_TabsBg.BorderSizePixel = 0
+
+    local TABS_TabsBgGradient = Instance.new("UIGradient")
+    TABS_TabsBgGradient.Parent = TABS_TabsBg
+    TABS_TabsBgGradient.Rotation = 90
+    TABS_TabsBgGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    local TABS_TabsBgListLayout = Instance.new("UIListLayout")
+    TABS_TabsBgListLayout.Parent = TABS_TabsBg
+    TABS_TabsBgListLayout.Padding = UDim.new(0,15)
+    TABS_TabsBgListLayout.FillDirection = Enum.FillDirection.Vertical
+    TABS_TabsBgListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TABS_TabsBgListLayout.Wraps = false
+    TABS_TabsBgListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    TABS_TabsBgListLayout.ItemLineAlignment = Enum.ItemLineAlignment.Automatic
+    TABS_TabsBgListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+    local TABS_TabsBgPadding = Instance.new("UIPadding")
+    TABS_TabsBgPadding.Parent = TABS_TabsBg
+    TABS_TabsBgPadding.PaddingBottom = UDim.new(0,0)
+    TABS_TabsBgPadding.PaddingLeft = UDim.new(0,20)
+    TABS_TabsBgPadding.PaddingRight = UDim.new(0,0)
+    TABS_TabsBgPadding.PaddingTop = UDim.new(0,20)
+
+    local TABS_HeaderSplitterLine = Instance.new("Frame")
+    TABS_HeaderSplitterLine.Parent = MAIN_MainBgFrame
+    TABS_HeaderSplitterLine.Name = "HeaderSplitter"
+    TABS_HeaderSplitterLine.BorderSizePixel = 0
+    TABS_HeaderSplitterLine.BackgroundColor3 = Color3.fromRGB(150,64,255)
+    TABS_HeaderSplitterLine.BackgroundTransparency = 0.2
+    TABS_HeaderSplitterLine.Position = UDim2.new(0,0,0.102,0)
+    TABS_HeaderSplitterLine.Size = UDim2.new(0,185,0,-1)
+    TABS_HeaderSplitterLine.ZIndex = 4
+
+    local TABS_HeaderSplitterLineGradient = Instance.new("UIGradient")
+    TABS_HeaderSplitterLineGradient.Parent = TABS_HeaderSplitterLine
+    TABS_HeaderSplitterLineGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,1,0),
+    	NumberSequenceKeypoint.new(1,0,0)
+    }
+
+    local TABS_TabsSplitterLine = Instance.new("Frame")
+    TABS_TabsSplitterLine.Parent = MAIN_MainBgFrame
+    TABS_TabsSplitterLine.Position = UDim2.new(0.24,0,0.101,0)
+    TABS_TabsSplitterLine.Size = UDim2.new(0,1,0,434)
+    TABS_TabsSplitterLine.BackgroundColor3 = Color3.fromRGB(85,85,85)
+    TABS_TabsSplitterLine.BackgroundTransparency = 0
+    TABS_TabsSplitterLine.BorderSizePixel = 0
+    TABS_TabsSplitterLine.ZIndex = 2
+    TABS_TabsSplitterLine.Name = "TabsSplitter"
+
+
+    local TABS_TabsSplitterLineGradient = Instance.new("UIGradient")
+    TABS_TabsSplitterLineGradient.Parent = TABS_TabsSplitterLine
+    TABS_TabsSplitterLineGradient.Rotation = 90
+    TABS_TabsSplitterLineGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    return {
+        MAIN_MainBgFrame = MAIN_MainBgFrame,
+        MAIN_TabsContentFolder = MAIN_TabsContentFolder,
+        MAIN_MainDarkFrame = MAIN_MainDarkFrame,
+        MAIN_SearchFrame = MAIN_SearchFrame,
+        MAIN_SearchFrameSearchImage = MAIN_SearchFrameSearchImage,
+        MAIN_SearchFrameTextBox = MAIN_SearchFrameTextBox,
+        MAIN_HeaderBgFrame = MAIN_HeaderBgFrame,
+        MAIN_CloseButton = MAIN_CloseButton,
+        MAIN_SettingsButton = MAIN_SettingsButton,
+        TABS_TabsBg = TABS_TabsBg,
+    }
+end
+
+local function buildColorPickerWindow(ColorPickerGui)
+    ------------------------------------------------
+    --                                  Color picker
+    ------------------------------------------------
+
+    local COLORPICKER_MainFrame = Instance.new("Frame")
+    COLORPICKER_MainFrame.Parent = ColorPickerGui
+    COLORPICKER_MainFrame.Name = "MainBg"
+    COLORPICKER_MainFrame.Position = UDim2.new(0.5,0,0.5,0)
+    COLORPICKER_MainFrame.Size = UDim2.new(0,608,0,417)
+    COLORPICKER_MainFrame.AnchorPoint = Vector2.new(0.5,0.5)
+    COLORPICKER_MainFrame.BackgroundColor3 = Color3.fromRGB(16,16,16)
+
+    local COLORPICKER_MainFrameCorner = Instance.new("UICorner")
+    COLORPICKER_MainFrameCorner.Parent = COLORPICKER_MainFrame
+    COLORPICKER_MainFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local COLORPICKER_MainFrameGradient = Instance.new("UIGradient")
+    COLORPICKER_MainFrameGradient.Parent = COLORPICKER_MainFrame
+    COLORPICKER_MainFrameGradient.Rotation = -90
+    COLORPICKER_MainFrameGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)),
+    	ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
+    }
+
+    local COLORPICKER_MainFrameStroke1 = Instance.new("UIStroke")
+    COLORPICKER_MainFrameStroke1.Parent = COLORPICKER_MainFrame
+    COLORPICKER_MainFrameStroke1.Color = Color3.fromRGB(47,47,47)
+    COLORPICKER_MainFrameStroke1.LineJoinMode = Enum.LineJoinMode.Round
+    COLORPICKER_MainFrameStroke1.Thickness = 2
+    COLORPICKER_MainFrameStroke1.ZIndex = 1
+
+    local COLORPICKER_MainFrameStroke2 = Instance.new("UIStroke")
+    COLORPICKER_MainFrameStroke2.Parent = COLORPICKER_MainFrame
+    COLORPICKER_MainFrameStroke2.Color = Color3.fromRGB(0,0,0)
+    COLORPICKER_MainFrameStroke2.LineJoinMode = Enum.LineJoinMode.Round
+    COLORPICKER_MainFrameStroke2.Thickness = 1
+    COLORPICKER_MainFrameStroke2.ZIndex = 2
+    COLORPICKER_MainFrameStroke2.Transparency = 0.16
+
+    local COLORPICKER_MainFrameLastColorFolder = Instance.new("Folder")
+    COLORPICKER_MainFrameLastColorFolder.Parent = COLORPICKER_MainFrame
+    COLORPICKER_MainFrameLastColorFolder.Name = "LastColor"
+
+    local COLORPICKER_ColorPickerMainFrame = Instance.new("Frame")
+    COLORPICKER_ColorPickerMainFrame.Parent = COLORPICKER_MainFrame
+    COLORPICKER_ColorPickerMainFrame.Name = "ColorPickerMain"
+    COLORPICKER_ColorPickerMainFrame.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    COLORPICKER_ColorPickerMainFrame.Position = UDim2.new(0.036,0,0.201,0)
+    COLORPICKER_ColorPickerMainFrame.Size = UDim2.new(0,219,0,219)
+    COLORPICKER_ColorPickerMainFrame.ZIndex = 1
+
+    local COLORPICKER_ColorPickerMainFrameCorner = Instance.new("UICorner")
+    COLORPICKER_ColorPickerMainFrameCorner.Parent = COLORPICKER_ColorPickerMainFrame
+    COLORPICKER_ColorPickerMainFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local COLORPICKER_ColorPickerMainFrameStroke1 = Instance.new("UIStroke")
+    COLORPICKER_ColorPickerMainFrameStroke1.Parent = COLORPICKER_ColorPickerMainFrame
+    COLORPICKER_ColorPickerMainFrameStroke1.Color = Color3.fromRGB(65,65,65)
+    COLORPICKER_ColorPickerMainFrameStroke1.Thickness = 2
+    COLORPICKER_ColorPickerMainFrameStroke1.ZIndex = 1
+
+    local COLORPICKER_ColorPickerMainFrameStroke2 = Instance.new("UIStroke")
+    COLORPICKER_ColorPickerMainFrameStroke2.Parent = COLORPICKER_ColorPickerMainFrame
+    COLORPICKER_ColorPickerMainFrameStroke2.Color = Color3.fromRGB(0,0,0)
+    COLORPICKER_ColorPickerMainFrameStroke2.Thickness = 1
+    COLORPICKER_ColorPickerMainFrameStroke2.Transparency = 0.57
+    COLORPICKER_ColorPickerMainFrameStroke2.ZIndex = 2
+
+    local COLORPICKER_ColorPickerMainFrameDot = Instance.new("Frame")
+    COLORPICKER_ColorPickerMainFrameDot.Parent = COLORPICKER_ColorPickerMainFrame
+    COLORPICKER_ColorPickerMainFrameDot.Name = "Dot"
+    COLORPICKER_ColorPickerMainFrameDot.Position = UDim2.new(0.187,0,0.269,0)
+    COLORPICKER_ColorPickerMainFrameDot.Size = UDim2.new(0,8,0,8)
+
+    local COLORPICKER_ColorPickerMainFrameDotCorner = Instance.new("UICorner")
+    COLORPICKER_ColorPickerMainFrameDotCorner.Parent = COLORPICKER_ColorPickerMainFrameDot
+    COLORPICKER_ColorPickerMainFrameDotCorner.CornerRadius = UDim.new(1,0)
+
+    local COLORPICKER_ColorPickerMainFrameDotGradient = Instance.new("UIGradient")
+    COLORPICKER_ColorPickerMainFrameDotGradient.Parent = COLORPICKER_ColorPickerMainFrameDot
+    COLORPICKER_ColorPickerMainFrameDotGradient.Rotation = 90
+    COLORPICKER_ColorPickerMainFrameDotGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,255)),
+    	ColorSequenceKeypoint.new(1,Color3.fromRGB(176,176,176))
+    }
+
+    local COLORPICKER_ColorPickerMainFrameDotStroke1 = Instance.new("UIStroke")
+    COLORPICKER_ColorPickerMainFrameDotStroke1.Parent = COLORPICKER_ColorPickerMainFrameDot
+    COLORPICKER_ColorPickerMainFrameDotStroke1.Color = Color3.fromRGB(0,0,0)
+    COLORPICKER_ColorPickerMainFrameDotStroke1.Thickness = 3
+    COLORPICKER_ColorPickerMainFrameDotStroke1.ZIndex = 1
+    COLORPICKER_ColorPickerMainFrameDotStroke1.Transparency = 0.88
+
+    local COLORPICKER_ColorPickerMainFrameDotStroke2 = Instance.new("UIStroke")
+    COLORPICKER_ColorPickerMainFrameDotStroke2.Parent = COLORPICKER_ColorPickerMainFrameDot
+    COLORPICKER_ColorPickerMainFrameDotStroke2.Color = Color3.fromRGB(0,0,0)
+    COLORPICKER_ColorPickerMainFrameDotStroke2.Thickness = 1
+    COLORPICKER_ColorPickerMainFrameDotStroke2.Transparency = 0.53
+    COLORPICKER_ColorPickerMainFrameDotStroke2.ZIndex = 2
+
+    local COLORPICKER_LastColorSplitterLine = Instance.new("Frame")
+    COLORPICKER_LastColorSplitterLine.Parent = COLORPICKER_MainFrameLastColorFolder
+    COLORPICKER_LastColorSplitterLine.Name = "LastColorSplitterLine"
+    COLORPICKER_LastColorSplitterLine.BackgroundTransparency = 0.65
+    COLORPICKER_LastColorSplitterLine.Position = UDim2.new(0.558,0,0.307,0)
+    COLORPICKER_LastColorSplitterLine.Size = UDim2.new(0,268,0,1)
+    COLORPICKER_LastColorSplitterLine.ZIndex = 1
+
+    local COLORPICKER_LastColorSplitterLineGradient = Instance.new("UIGradient")
+    COLORPICKER_LastColorSplitterLineGradient.Parent = COLORPICKER_LastColorSplitterLine
+    COLORPICKER_LastColorSplitterLineGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,1,0),
+    	NumberSequenceKeypoint.new(0.5,0.45,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    local COLORPICKER_LastColorUpperGlow = Instance.new("Frame")
+    COLORPICKER_LastColorUpperGlow.Parent = COLORPICKER_LastColorSplitterLine
+    COLORPICKER_LastColorUpperGlow.Name = "UpperGlow"
+    COLORPICKER_LastColorUpperGlow.BackgroundTransparency = 0.85
+    COLORPICKER_LastColorUpperGlow.BackgroundColor3 = Color3.fromRGB(52,52,52)
+    COLORPICKER_LastColorUpperGlow.Position = UDim2.new(0,0,-44,0)
+    COLORPICKER_LastColorUpperGlow.Size = UDim2.new(0,269,0,44)
+    COLORPICKER_LastColorUpperGlow.ZIndex = 1
+
+    local COLORPICKER_LastColorUpperGlowGradient = Instance.new("UIGradient")
+    COLORPICKER_LastColorUpperGlowGradient.Parent = COLORPICKER_LastColorUpperGlow
+    COLORPICKER_LastColorUpperGlowGradient.Rotation = -90
+    COLORPICKER_LastColorUpperGlowGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    local COLORPICKER_LastColorLowerGlow = Instance.new("Frame")
+    COLORPICKER_LastColorLowerGlow.Parent = COLORPICKER_LastColorSplitterLine
+    COLORPICKER_LastColorLowerGlow.Name = "LowerGlow"
+    COLORPICKER_LastColorLowerGlow.BackgroundTransparency = 0.9
+    COLORPICKER_LastColorLowerGlow.BackgroundColor3 = Color3.fromRGB(52,52,52)
+    COLORPICKER_LastColorLowerGlow.Position = UDim2.new(0,0,1,0)
+    COLORPICKER_LastColorLowerGlow.Size = UDim2.new(0,269,0,44)
+    COLORPICKER_LastColorLowerGlow.ZIndex = 1
+
+    local COLORPICKER_LastColorLowerGlowGradient = Instance.new("UIGradient")
+    COLORPICKER_LastColorLowerGlowGradient.Parent = COLORPICKER_LastColorLowerGlow
+    COLORPICKER_LastColorLowerGlowGradient.Rotation = 90
+    COLORPICKER_LastColorLowerGlowGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0.5,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    local COLORPICKER_LastColorRecentText = Instance.new("TextLabel")
+    COLORPICKER_LastColorRecentText.Parent = COLORPICKER_MainFrameLastColorFolder
+    COLORPICKER_LastColorRecentText.Name = "RecentText"
+    COLORPICKER_LastColorRecentText.BackgroundTransparency = 1
+    COLORPICKER_LastColorRecentText.Position = UDim2.new(0.587,0,0.12,0)
+    COLORPICKER_LastColorRecentText.Size = UDim2.new(0,82,0,33)
+    COLORPICKER_LastColorRecentText.Font = Enum.Font.RobotoMono
+    COLORPICKER_LastColorRecentText.Text = "Recent:"
+    COLORPICKER_LastColorRecentText.TextColor3 = Color3.fromRGB(86,86,86)
+    COLORPICKER_LastColorRecentText.TextSize = 12
+    COLORPICKER_LastColorRecentText.TextStrokeTransparency = 1
+    COLORPICKER_LastColorRecentText.TextXAlignment = Enum.TextXAlignment.Left
+
+    local COLORPICKER_LastColorLastColor1 = CreateLastColor(1, UDim2.new(0.589,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
+    local COLORPICKER_LastColorLastColor2 = CreateLastColor(2, UDim2.new(0.671,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
+    local COLORPICKER_LastColorLastColor3 = CreateLastColor(3, UDim2.new(0.753,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
+    local COLORPICKER_LastColorLastColor4 = CreateLastColor(4, UDim2.new(0.835,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
+    local COLORPICKER_LastColorLastColor5 = CreateLastColor(5, UDim2.new(0.917,0,0.201,0), COLORPICKER_MainFrameLastColorFolder)
+
+    local COLORPICKER_CurrentColorFrame = Instance.new("Frame")
+    COLORPICKER_CurrentColorFrame.Parent = COLORPICKER_MainFrame
+    COLORPICKER_CurrentColorFrame.Name = "CurrentColor"
+    COLORPICKER_CurrentColorFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    COLORPICKER_CurrentColorFrame.BorderSizePixel = 0
+    COLORPICKER_CurrentColorFrame.Position = UDim2.new(0.426,0,0.329,0)
+    COLORPICKER_CurrentColorFrame.Size = UDim2.new(0,43,0,166)
+    COLORPICKER_CurrentColorFrame.ZIndex = 1
+
+    local COLORPICKER_CurrentColorFrameCorner = Instance.new("UICorner")
+    COLORPICKER_CurrentColorFrameCorner.Parent = COLORPICKER_CurrentColorFrame
+    COLORPICKER_CurrentColorFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local COLORPICKER_CurrentColorFrameStroke1 = Instance.new("UIStroke")
+    COLORPICKER_CurrentColorFrameStroke1.Parent = COLORPICKER_CurrentColorFrame
+    COLORPICKER_CurrentColorFrameStroke1.Color = Color3.fromRGB(65,65,65)
+    COLORPICKER_CurrentColorFrameStroke1.Thickness = 2
+    COLORPICKER_CurrentColorFrameStroke1.ZIndex = 1
+
+    local COLORPICKER_CurrentColorFrameStroke2 = Instance.new("UIStroke")
+    COLORPICKER_CurrentColorFrameStroke2.Parent = COLORPICKER_CurrentColorFrame
+    COLORPICKER_CurrentColorFrameStroke2.Color = Color3.fromRGB(0,0,0)
+    COLORPICKER_CurrentColorFrameStroke2.Thickness = 1
+    COLORPICKER_CurrentColorFrameStroke2.Transparency = 0.57
+    COLORPICKER_CurrentColorFrameStroke2.ZIndex = 2
+
+    local COLORPICKER_ColorSelectorFrame = Instance.new("Frame")
+    COLORPICKER_ColorSelectorFrame.Parent = COLORPICKER_MainFrame
+    COLORPICKER_ColorSelectorFrame.Name = "ColorSelector"
+    COLORPICKER_ColorSelectorFrame.BackgroundColor3 = Color3.fromRGB(209,209,209)
+    COLORPICKER_ColorSelectorFrame.Position = UDim2.new(0.526,0,0.199,0)
+    COLORPICKER_ColorSelectorFrame.Size = UDim2.new(0,19,0,219)
+    COLORPICKER_ColorSelectorFrame.ZIndex = 1
+
+    local COLORPICKER_ColorSelectorFrameCorner = Instance.new("UICorner")
+    COLORPICKER_ColorSelectorFrameCorner.Parent = COLORPICKER_ColorSelectorFrame
+    COLORPICKER_ColorSelectorFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local COLORPICKER_ColorSelectorFrameGradient = Instance.new("UIGradient")
+    COLORPICKER_ColorSelectorFrameGradient.Parent = COLORPICKER_ColorSelectorFrame
+    COLORPICKER_ColorSelectorFrameGradient.Rotation = 90
+    -- There all colors gradient
+
+    local COLORPICKER_ColorSelectorFrameStroke1 = Instance.new("UIStroke")
+    COLORPICKER_ColorSelectorFrameStroke1.Parent = COLORPICKER_ColorSelectorFrame
+    COLORPICKER_ColorSelectorFrameStroke1.Color	= Color3.fromRGB(65,65,65)
+    COLORPICKER_ColorSelectorFrameStroke1.Thickness = 2
+    COLORPICKER_ColorSelectorFrameStroke1.ZIndex = 1
+
+    local COLORPICKER_ColorSelectorFrameStroke2 = Instance.new("UIStroke")
+    COLORPICKER_ColorSelectorFrameStroke2.Parent = COLORPICKER_ColorSelectorFrame
+    COLORPICKER_ColorSelectorFrameStroke2.Color	= Color3.fromRGB(0,0,0)
+    COLORPICKER_ColorSelectorFrameStroke2.Thickness = 1
+    COLORPICKER_ColorSelectorFrameStroke2.Transparency = 0.57
+    COLORPICKER_ColorSelectorFrameStroke2.ZIndex = 2
+
+    local COLORPICKER_ColorSelectorFrameSelectLine = Instance.new("Frame")
+    COLORPICKER_ColorSelectorFrameSelectLine.Parent = COLORPICKER_ColorSelectorFrame
+    COLORPICKER_ColorSelectorFrameSelectLine.Name = "SelectLine"
+    COLORPICKER_ColorSelectorFrameSelectLine.BackgroundColor3 = Color3.fromRGB(65,65,65)
+    COLORPICKER_ColorSelectorFrameSelectLine.Position = UDim2.new(0,0,0.74,0)
+    COLORPICKER_ColorSelectorFrameSelectLine.Size = UDim2.new(0,19,0,1)
+    COLORPICKER_ColorSelectorFrameSelectLine.ZIndex = 1
+
+    local COLORPICKER_ColorSelectorFrameSelectLineStroke = Instance.new("UIStroke")
+    COLORPICKER_ColorSelectorFrameSelectLineStroke.Parent = COLORPICKER_ColorSelectorFrameSelectLine
+    COLORPICKER_ColorSelectorFrameSelectLineStroke.Color = Color3.fromRGB(0,0,0)
+    COLORPICKER_ColorSelectorFrameSelectLineStroke.Thickness = 1.1
+    COLORPICKER_ColorSelectorFrameSelectLineStroke.Transparency = 0.4
+    COLORPICKER_ColorSelectorFrameSelectLineStroke.ZIndex = 1
+
+    local COLORPICKER_HeaderBgFrame = Instance.new("Frame")
+    COLORPICKER_HeaderBgFrame.Parent = COLORPICKER_MainFrame
+    COLORPICKER_HeaderBgFrame.Name = "HeaderBg"
+    COLORPICKER_HeaderBgFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
+    COLORPICKER_HeaderBgFrame.Position = UDim2.new(0,0,0,0)
+    COLORPICKER_HeaderBgFrame.Size = UDim2.new(0,608,0,50)
+    COLORPICKER_HeaderBgFrame.ZIndex = 5
+
+    local COLORPICKER_HeaderBgFrameCorner = Instance.new("UICorner")
+    COLORPICKER_HeaderBgFrameCorner.Parent = COLORPICKER_HeaderBgFrame
+    COLORPICKER_HeaderBgFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local COLORPICKER_HeaderBgFrameGradient = Instance.new("UIGradient")
+    COLORPICKER_HeaderBgFrameGradient.Parent = COLORPICKER_HeaderBgFrame
+    COLORPICKER_HeaderBgFrameGradient.Rotation = -90
+    COLORPICKER_HeaderBgFrameGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0, Color3.fromRGB(95,95,95)),
+    	ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
+    }
+
+    local COLORPICKER_HeaderBgFrameStroke = Instance.new("UIStroke")
+    COLORPICKER_HeaderBgFrameStroke.Parent = COLORPICKER_HeaderBgFrame
+    COLORPICKER_HeaderBgFrameStroke.Color = Color3.fromRGB(150,64,255)
+    COLORPICKER_HeaderBgFrameStroke.Thickness = 1
+    COLORPICKER_HeaderBgFrameStroke.ZIndex = 3
+
+    local COLORPICKER_HeaderBgFrameStrokeGradient = Instance.new("UIGradient")
+    COLORPICKER_HeaderBgFrameStrokeGradient.Parent = COLORPICKER_HeaderBgFrameStroke
+    COLORPICKER_HeaderBgFrameStrokeGradient.Rotation = -90
+    COLORPICKER_HeaderBgFrameStrokeGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0,0),
+    	NumberSequenceKeypoint.new(0.05,1,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    local COLORPICKER_HeaderBgFrameBgGlow = Instance.new("Frame")
+    COLORPICKER_HeaderBgFrameBgGlow.Parent = COLORPICKER_MainFrame
+    COLORPICKER_HeaderBgFrameBgGlow.BackgroundColor3 = Color3.fromRGB(150,64,255)
+    COLORPICKER_HeaderBgFrameBgGlow.BackgroundTransparency = 0.5
+    COLORPICKER_HeaderBgFrameBgGlow.ZIndex = 5
+    COLORPICKER_HeaderBgFrameBgGlow.Position = UDim2.new(0,0,0.119,0)
+    COLORPICKER_HeaderBgFrameBgGlow.Size = UDim2.new(0,608,0,17)
+    COLORPICKER_HeaderBgFrameBgGlow.Name = "HederBgGlow"
+
+    local COLORPICKER_HeaderBgFrameBgGlowGradient = Instance.new("UIGradient")
+    COLORPICKER_HeaderBgFrameBgGlowGradient.Parent = COLORPICKER_HeaderBgFrameBgGlow
+    COLORPICKER_HeaderBgFrameBgGlowGradient.Rotation = 90
+    COLORPICKER_HeaderBgFrameBgGlowGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,0.732,0),
+    	NumberSequenceKeypoint.new(1,1,0)
+    }
+
+    local COLORPICKER_CloseButton = Instance.new("ImageButton")
+    COLORPICKER_CloseButton.Parent = COLORPICKER_MainFrame
+    COLORPICKER_CloseButton.Name = "CloseButton"
+    COLORPICKER_CloseButton.Image = _closeImageId
+    COLORPICKER_CloseButton.BackgroundTransparency = 1
+    COLORPICKER_CloseButton.Position = UDim2.new(0.929,0,0.017,0)
+    COLORPICKER_CloseButton.Size = UDim2.new(0,36,0,36)
+    COLORPICKER_CloseButton.ImageTransparency = 0.84
+    COLORPICKER_CloseButton.ImageColor3 = Color3.fromRGB(255,255,255)
+
+    local COLORPICKER_MoveBackButton = Instance.new("ImageButton")
+    COLORPICKER_MoveBackButton.Parent = COLORPICKER_MainFrame
+    COLORPICKER_MoveBackButton.Name = "MoveBackButton"
+    COLORPICKER_MoveBackButton.Position = UDim2.new(0.426,0,0.261,0)
+    COLORPICKER_MoveBackButton.Size = UDim2.new(0,20,0,20)
+    COLORPICKER_MoveBackButton.Image = _moveImageId
+    COLORPICKER_MoveBackButton.Rotation = 180
+    COLORPICKER_MoveBackButton.ImageTransparency = 0.25
+    COLORPICKER_MoveBackButton.ZIndex = 1
+    COLORPICKER_MoveBackButton.BackgroundTransparency = 1
+
+    local COLORPICKER_MoveForwardButton = Instance.new("ImageButton")
+    COLORPICKER_MoveForwardButton.Parent = COLORPICKER_MainFrame
+    COLORPICKER_MoveForwardButton.Name = "MoveForwardButton"
+    COLORPICKER_MoveForwardButton.Position = UDim2.new(0.464,0,0.261,0)
+    COLORPICKER_MoveForwardButton.Size = UDim2.new(0,20,0,20)
+    COLORPICKER_MoveForwardButton.Image = _moveImageId
+    COLORPICKER_MoveForwardButton.Rotation = 0
+    COLORPICKER_MoveForwardButton.ImageTransparency = 0.25
+    COLORPICKER_MoveForwardButton.ZIndex = 1
+    COLORPICKER_MoveForwardButton.BackgroundTransparency = 1
+
+    local COLORPICKER_RandomColor = Instance.new("ImageButton")
+    COLORPICKER_RandomColor.Parent = COLORPICKER_MainFrame
+    COLORPICKER_RandomColor.Name = "RandomColorButton"
+    COLORPICKER_RandomColor.BackgroundTransparency = 1
+    COLORPICKER_RandomColor.Position = UDim2.new(0.464,0,0.201,0)
+    COLORPICKER_RandomColor.Size = UDim2.new(0,20,0,20)
+    COLORPICKER_RandomColor.ImageTransparency = 0.25
+    COLORPICKER_RandomColor.Image = _randomImageId
+
+    local COLORPICKER_ResetToDefault = Instance.new("ImageButton")
+    COLORPICKER_ResetToDefault.Parent = COLORPICKER_MainFrame
+    COLORPICKER_ResetToDefault.Name = "ResetToDefaultButton"
+    COLORPICKER_ResetToDefault.BackgroundTransparency = 1
+    COLORPICKER_ResetToDefault.Position = UDim2.new(0.426,0,0.201,0)
+    COLORPICKER_ResetToDefault.Size = UDim2.new(0,20,0,20)
+    COLORPICKER_ResetToDefault.ZIndex = 1
+    COLORPICKER_ResetToDefault.ImageTransparency = 0.25
+    COLORPICKER_ResetToDefault.Image = _resetImageId
+
+    local COLORPICKER_WindowDesc = Instance.new("TextLabel")
+    COLORPICKER_WindowDesc.Parent = COLORPICKER_MainFrame
+    COLORPICKER_WindowDesc.BackgroundTransparency = 1
+    COLORPICKER_WindowDesc.ZIndex = 5
+    COLORPICKER_WindowDesc.Position = UDim2.new(0.016,0,0.042,0)
+    COLORPICKER_WindowDesc.Size = UDim2.new(0,97,0,32)
+    COLORPICKER_WindowDesc.Name = "WindowDesc"
+    COLORPICKER_WindowDesc.Font = Enum.Font.RobotoMono
+    COLORPICKER_WindowDesc.Text = "from: nil"
+    COLORPICKER_WindowDesc.TextTransparency = 0.65
+    COLORPICKER_WindowDesc.TextSize = 12
+    COLORPICKER_WindowDesc.TextColor3 = Color3.fromRGB(255,255,255)
+    COLORPICKER_WindowDesc.TextXAlignment = Enum.TextXAlignment.Left
+
+    local COLORPICKER_WindowName = Instance.new("TextLabel")
+    COLORPICKER_WindowName.Parent = COLORPICKER_MainFrame
+    COLORPICKER_WindowName.Name = "WindowName"
+    COLORPICKER_WindowName.BackgroundTransparency = 1
+    COLORPICKER_WindowName.Position = UDim2.new(0.016,0,0)
+    COLORPICKER_WindowName.Size = UDim2.new(0,97,0,32)
+    COLORPICKER_WindowName.TextXAlignment = Enum.TextXAlignment.Left
+    COLORPICKER_WindowName.TextSize = 16
+    COLORPICKER_WindowName.Font = Enum.Font.RobotoMono
+    COLORPICKER_WindowName.Text = "Color picker"
+    COLORPICKER_WindowName.TextColor3 = Color3.fromRGB(255,255,255)
+    COLORPICKER_WindowName.TextTransparency = 0.21
+    COLORPICKER_WindowName.ZIndex = 5
+
+    local COLORPCIKER_OtherText = Instance.new("TextLabel")
+    COLORPCIKER_OtherText.Parent = COLORPICKER_MainFrame
+    COLORPCIKER_OtherText.Name = "OtherText"
+    COLORPCIKER_OtherText.BackgroundTransparency = 1
+    COLORPCIKER_OtherText.Position = UDim2.new(0.587,0,0.312,0)
+    COLORPCIKER_OtherText.Size = UDim2.new(0,82,0,30)
+    COLORPCIKER_OtherText.ZIndex = 5
+    COLORPCIKER_OtherText.Font = Enum.Font.RobotoMono
+    COLORPCIKER_OtherText.TextColor3 = Color3.fromRGB(86,86,86)
+    COLORPCIKER_OtherText.TextSize = 12
+    COLORPCIKER_OtherText.Text = "Other: [no data, under development]"
+    COLORPCIKER_OtherText.TextXAlignment = Enum.TextXAlignment.Left
+
+    return {
+        COLORPICKER_MainFrame = COLORPICKER_MainFrame,
+        COLORPICKER_ColorPickerMainFrame = COLORPICKER_ColorPickerMainFrame,
+        COLORPICKER_ColorPickerMainFrameDot = COLORPICKER_ColorPickerMainFrameDot,
+        COLORPICKER_LastColorLastColor1 = COLORPICKER_LastColorLastColor1,
+        COLORPICKER_LastColorLastColor2 = COLORPICKER_LastColorLastColor2,
+        COLORPICKER_LastColorLastColor3 = COLORPICKER_LastColorLastColor3,
+        COLORPICKER_LastColorLastColor4 = COLORPICKER_LastColorLastColor4,
+        COLORPICKER_LastColorLastColor5 = COLORPICKER_LastColorLastColor5,
+        COLORPICKER_CurrentColorFrame = COLORPICKER_CurrentColorFrame,
+        COLORPICKER_ColorSelectorFrame = COLORPICKER_ColorSelectorFrame,
+        COLORPICKER_ColorSelectorFrameGradient = COLORPICKER_ColorSelectorFrameGradient,
+        COLORPICKER_ColorSelectorFrameSelectLine = COLORPICKER_ColorSelectorFrameSelectLine,
+        COLORPICKER_HeaderBgFrame = COLORPICKER_HeaderBgFrame,
+        COLORPICKER_CloseButton = COLORPICKER_CloseButton,
+        COLORPICKER_MoveBackButton = COLORPICKER_MoveBackButton,
+        COLORPICKER_MoveForwardButton = COLORPICKER_MoveForwardButton,
+        COLORPICKER_RandomColor = COLORPICKER_RandomColor,
+        COLORPICKER_ResetToDefault = COLORPICKER_ResetToDefault,
+        COLORPICKER_WindowDesc = COLORPICKER_WindowDesc,
+    }
+end
+
+local function buildNotificationsAndDemo(NotificationsGui, TABS_TabsBg, MAIN_TabsContentFolder)
+    ------------------------------------------------
+    --                                 Notifications
+    ------------------------------------------------
+
+    local NOTIFICATIONS_MainFrame = Instance.new("Frame")
+    NOTIFICATIONS_MainFrame.Parent = NotificationsGui
+    NOTIFICATIONS_MainFrame.Name = "NotificationBackground"
+    NOTIFICATIONS_MainFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
+    NOTIFICATIONS_MainFrame.Position = UDim2.new(0.615,0,0.902,0)
+    NOTIFICATIONS_MainFrame.Size = UDim2.new(0,253,0,65)
+    NOTIFICATIONS_MainFrame.ZIndex = 1
+
+    local NOTIFICATIONS_MainFrameCorner = Instance.new("UICorner")
+    NOTIFICATIONS_MainFrameCorner.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_MainFrameCorner.CornerRadius = UDim.new(0,4)
+
+    local NOTIFICATIONS_MainFrameGradient = Instance.new("UIGradient")
+    NOTIFICATIONS_MainFrameGradient.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_MainFrameGradient.Rotation = -90
+    NOTIFICATIONS_MainFrameGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0,Color3.fromRGB(95,95,95)),
+    	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
+    }
+
+    local NOTIFICATIONS_MainFrameStroke1 = Instance.new("UIStroke")
+    NOTIFICATIONS_MainFrameStroke1.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_MainFrameStroke1.Color = Color3.fromRGB(56,56,56)
+    NOTIFICATIONS_MainFrameStroke1.Thickness = 2
+    NOTIFICATIONS_MainFrame.ZIndex = 0
+
+    local NOTIFICATIONS_MainFrameStroke2 = Instance.new("UIStroke")
+    NOTIFICATIONS_MainFrameStroke2.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_MainFrameStroke2.Color = Color3.fromRGB(0,0,0)
+    NOTIFICATIONS_MainFrameStroke2.Thickness = 1
+    NOTIFICATIONS_MainFrameStroke2.Transparency = 0.31
+    NOTIFICATIONS_MainFrameStroke2.ZIndex = 2
+
+    local NOTIFICATIONS_DragLine = Instance.new("Frame")
+    NOTIFICATIONS_DragLine.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_DragLine.Name = "DragLine"
+    NOTIFICATIONS_DragLine.Position = UDim2.new(0.024,0,0.169,0)
+    NOTIFICATIONS_DragLine.Size = UDim2.new(0,5,0,43)
+    NOTIFICATIONS_DragLine.ZIndex = 1
+    NOTIFICATIONS_DragLine.BackgroundColor3 = Color3.fromRGB(255,255,255)
+
+    local NOTIFICATIONS_DragLineCorner = Instance.new("UICorner")
+    NOTIFICATIONS_DragLineCorner.Parent = NOTIFICATIONS_DragLine
+    NOTIFICATIONS_DragLineCorner.CornerRadius = UDim.new(0,20)
+
+    local NOTIFICATIONS_DragLineGradient = Instance.new("UIGradient")
+    NOTIFICATIONS_DragLineGradient.Parent = NOTIFICATIONS_DragLine
+    NOTIFICATIONS_DragLineGradient.Rotation = 90
+    NOTIFICATIONS_DragLineGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0,Color3.fromRGB(146,74,255)),
+    	ColorSequenceKeypoint.new(1,Color3.fromRGB(80,33,152))
+    }
+
+    local NOTIFICATIONS_DragLineStroke = Instance.new("UIStroke")
+    NOTIFICATIONS_DragLineStroke.Parent = NOTIFICATIONS_DragLine
+    NOTIFICATIONS_DragLineStroke.Color = Color3.fromRGB(0,0,0)
+    NOTIFICATIONS_DragLineStroke.Thickness = 1
+    NOTIFICATIONS_DragLineStroke.Transparency = 0.72
+    NOTIFICATIONS_DragLineStroke.ZIndex = 1
+
+    local NOTIFICATIONS_TimeLine = Instance.new("Frame")
+    NOTIFICATIONS_TimeLine.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_TimeLine.Name = "TimeLine"
+    NOTIFICATIONS_TimeLine.BackgroundColor3 = Color3.fromRGB(150,64,255)
+    NOTIFICATIONS_TimeLine.BackgroundTransparency = 0.45
+    NOTIFICATIONS_TimeLine.Position = UDim2.new(0,0,0.975,0)
+    NOTIFICATIONS_TimeLine.Size = UDim2.new(0,253,0,2)
+    NOTIFICATIONS_TimeLine.ZIndex = 1
+
+    local NOTIFICATIONS_TimeLineCorner = Instance.new("UICorner")
+    NOTIFICATIONS_TimeLineCorner.Parent = NOTIFICATIONS_TimeLine
+    NOTIFICATIONS_TimeLineCorner.CornerRadius = UDim.new(0,80)
+
+    local NOTIFICATIONS_TimeLineGradient = Instance.new("UIGradient")
+    NOTIFICATIONS_TimeLineGradient.Parent = NOTIFICATIONS_TimeLine
+    NOTIFICATIONS_TimeLineGradient.Color = ColorSequence.new{
+    	ColorSequenceKeypoint.new(0,Color3.fromRGB(137,98,255)),
+    	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
+    }
+
+    local NOTIFICATIONS_TimeLineGlow = Instance.new("Frame")
+    NOTIFICATIONS_TimeLineGlow.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_TimeLineGlow.Name = "TimeLineGlow"
+    NOTIFICATIONS_TimeLineGlow.BackgroundColor3 = Color3.fromRGB(150,64,255)
+    NOTIFICATIONS_TimeLineGlow.ZIndex = 5
+    NOTIFICATIONS_TimeLineGlow.Position = UDim2.new(0,0,0.728,0)
+    NOTIFICATIONS_TimeLineGlow.Size = UDim2.new(0,253,0,17)
+
+    local NOTIFICATIONS_TimeLineGlowGradient = Instance.new("UIGradient")
+    NOTIFICATIONS_TimeLineGlowGradient.Parent = NOTIFICATIONS_TimeLineGlow
+    NOTIFICATIONS_TimeLineGlowGradient.Rotation = 90
+    NOTIFICATIONS_TimeLineGlowGradient.Transparency = NumberSequence.new{
+    	NumberSequenceKeypoint.new(0,1,0),
+    	NumberSequenceKeypoint.new(1,0.88,0)
+    }
+
+    local NOTIFICATIONS_CloseButton = Instance.new("ImageButton")
+    NOTIFICATIONS_CloseButton.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_CloseButton.Name = "CloseButton"
+    NOTIFICATIONS_CloseButton.BackgroundTransparency = 1
+    NOTIFICATIONS_CloseButton.Position = UDim2.new(0.91,0,0,0)
+    NOTIFICATIONS_CloseButton.Size = UDim2.new(0,22,0,22)
+    NOTIFICATIONS_CloseButton.ImageTransparency = 0.84
+    NOTIFICATIONS_CloseButton.Image = _closeImageId
+
+    local NOTIFICATIONS_FreezeButton = Instance.new("ImageButton")
+    NOTIFICATIONS_FreezeButton.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_FreezeButton.Name = "FreezeButton"
+    NOTIFICATIONS_FreezeButton.BackgroundTransparency = 1
+    NOTIFICATIONS_FreezeButton.Position = UDim2.new(0.822,0,0,0)
+    NOTIFICATIONS_FreezeButton.Size = UDim2.new(0,22,0,22)
+    NOTIFICATIONS_FreezeButton.ImageTransparency = 1
+
+    local NOTIFICATIONS_FreezeButtonIcon = Instance.new("ImageLabel")
+    NOTIFICATIONS_FreezeButtonIcon.Parent = NOTIFICATIONS_FreezeButton
+    NOTIFICATIONS_FreezeButtonIcon.Name = "FreezeButtonIcon"
+    NOTIFICATIONS_FreezeButtonIcon.Position = UDim2.new(0.5,0,0.5,0)
+    NOTIFICATIONS_FreezeButtonIcon.Size = UDim2.new(0,13,0,13)
+    NOTIFICATIONS_FreezeButtonIcon.Image = _freezeImageId
+    NOTIFICATIONS_FreezeButtonIcon.ImageTransparency = 0.84
+    NOTIFICATIONS_FreezeButtonIcon.BackgroundTransparency = 1
+    NOTIFICATIONS_FreezeButtonIcon.AnchorPoint = Vector2.new(.5,.5)
+
+    local NOTIFICATIONS_TimeLeft = Instance.new("TextLabel")
+    NOTIFICATIONS_TimeLeft.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_TimeLeft.Name = "TimeLeft"
+    NOTIFICATIONS_TimeLeft.BackgroundTransparency = 1
+    NOTIFICATIONS_TimeLeft.Position = UDim2.new(0.834,0,0.646,0)
+    NOTIFICATIONS_TimeLeft.Size = UDim2.new(0,35,0,23)
+    NOTIFICATIONS_TimeLeft.ZIndex = 1
+    NOTIFICATIONS_TimeLeft.Text = "3s"
+    NOTIFICATIONS_TimeLeft.Font = Enum.Font.RobotoMono
+    NOTIFICATIONS_TimeLeft.TextColor3 = Color3.fromRGB(63,63,63)
+    NOTIFICATIONS_TimeLeft.TextSize = 11
+    NOTIFICATIONS_TimeLeft.TextXAlignment = Enum.TextXAlignment.Right
+
+    local NOTIFICATIONS_NotificationName = Instance.new("TextLabel")
+    NOTIFICATIONS_NotificationName.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_NotificationName.Name = "NotificationName"
+    NOTIFICATIONS_NotificationName.BackgroundTransparency = 1
+    NOTIFICATIONS_NotificationName.ZIndex = 1
+    NOTIFICATIONS_NotificationName.Position = UDim2.new(0.075,0,0.031,0)
+    NOTIFICATIONS_NotificationName.Size = UDim2.new(0,72,0,23)
+    NOTIFICATIONS_NotificationName.Font = Enum.Font.RobotoMono
+    NOTIFICATIONS_NotificationName.Text = "Notification name"
+    NOTIFICATIONS_NotificationName.TextSize = 14
+    NOTIFICATIONS_NotificationName.TextColor3 = Color3.fromRGB(255,255,255)
+    NOTIFICATIONS_NotificationName.TextStrokeTransparency = 0.42
+    NOTIFICATIONS_NotificationName.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+    NOTIFICATIONS_NotificationName.TextXAlignment = Enum.TextXAlignment.Left
+
+    local NOTIFICATIONS_NotificationDescription = Instance.new("TextLabel")
+    NOTIFICATIONS_NotificationDescription.Parent = NOTIFICATIONS_MainFrame
+    NOTIFICATIONS_NotificationDescription.Name = "NotificationDescription"
+    NOTIFICATIONS_NotificationDescription.BackgroundTransparency = 1
+    NOTIFICATIONS_NotificationDescription.ZIndex = 1
+    NOTIFICATIONS_NotificationDescription.Position = UDim2.new(0.075,0,0.262,0)
+    NOTIFICATIONS_NotificationDescription.Size = UDim2.new(0,182,0,37)
+    NOTIFICATIONS_NotificationDescription.Font = Enum.Font.RobotoMono
+    NOTIFICATIONS_NotificationDescription.Text = "Notification description"
+    NOTIFICATIONS_NotificationDescription.TextColor3 = Color3.fromRGB(161,161,161)
+    NOTIFICATIONS_NotificationDescription.TextSize = 12
+    NOTIFICATIONS_NotificationDescription.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Category1, c1TabsHolderFrame = createTabCategory("Main", TABS_TabsBg)
+    local Tab1, tab1Scrolling = createTab("Player", c1TabsHolderFrame, MAIN_TabsContentFolder)
+    local Tab2, tab2Scrolling = createTab("World", c1TabsHolderFrame, MAIN_TabsContentFolder)
+    local section = createSection("Main", tab1Scrolling, "left")
+    local button = createButton("button", section)
+    local dropdown = createDropdown("dropdown", section, -1)
+    local toggle = createToggle("toggle", section)
+    local colorPicker = createColorPicker("color picker", section)
+    local section2 = createSection("Player", tab1Scrolling, "right")
+    local textbox = createTextbox("textbox", section2)
+    local slider = createSlider("slider", section2)
+    local keybind = createKeybind("keybind", section2, "H")
+
+    tab1Scrolling.Visible = true
+
+    --──────────────────────────────────────────────────--
+
+    return {
+        NOTIFICATIONS_MainFrame = NOTIFICATIONS_MainFrame,
+        button = button,
+        dropdown = dropdown,
+        toggle = toggle,
+        colorPicker = colorPicker,
+        textbox = textbox,
+        slider = slider,
+        keybind = keybind,
+    }
+end
+
+local _rootRefs = buildRootGuis()
+local MainGui = _rootRefs.MainGui
+local ColorPickerGui = _rootRefs.ColorPickerGui
+local NotificationsGui = _rootRefs.NotificationsGui
+
+local _mainRefs = buildMainWindow(MainGui)
+local MAIN_MainBgFrame = _mainRefs.MAIN_MainBgFrame
+local MAIN_TabsContentFolder = _mainRefs.MAIN_TabsContentFolder
+local MAIN_MainDarkFrame = _mainRefs.MAIN_MainDarkFrame
+local MAIN_SearchFrame = _mainRefs.MAIN_SearchFrame
+local MAIN_SearchFrameSearchImage = _mainRefs.MAIN_SearchFrameSearchImage
+local MAIN_SearchFrameTextBox = _mainRefs.MAIN_SearchFrameTextBox
+local MAIN_HeaderBgFrame = _mainRefs.MAIN_HeaderBgFrame
+local MAIN_CloseButton = _mainRefs.MAIN_CloseButton
+local MAIN_SettingsButton = _mainRefs.MAIN_SettingsButton
+local TABS_TabsBg = _mainRefs.TABS_TabsBg
+
+local _colorRefs = buildColorPickerWindow(ColorPickerGui)
+local COLORPICKER_MainFrame = _colorRefs.COLORPICKER_MainFrame
+local COLORPICKER_ColorPickerMainFrame = _colorRefs.COLORPICKER_ColorPickerMainFrame
+local COLORPICKER_ColorPickerMainFrameDot = _colorRefs.COLORPICKER_ColorPickerMainFrameDot
+local COLORPICKER_LastColorLastColor1 = _colorRefs.COLORPICKER_LastColorLastColor1
+local COLORPICKER_LastColorLastColor2 = _colorRefs.COLORPICKER_LastColorLastColor2
+local COLORPICKER_LastColorLastColor3 = _colorRefs.COLORPICKER_LastColorLastColor3
+local COLORPICKER_LastColorLastColor4 = _colorRefs.COLORPICKER_LastColorLastColor4
+local COLORPICKER_LastColorLastColor5 = _colorRefs.COLORPICKER_LastColorLastColor5
+local COLORPICKER_CurrentColorFrame = _colorRefs.COLORPICKER_CurrentColorFrame
+local COLORPICKER_ColorSelectorFrame = _colorRefs.COLORPICKER_ColorSelectorFrame
+local COLORPICKER_ColorSelectorFrameGradient = _colorRefs.COLORPICKER_ColorSelectorFrameGradient
+local COLORPICKER_ColorSelectorFrameSelectLine = _colorRefs.COLORPICKER_ColorSelectorFrameSelectLine
+local COLORPICKER_HeaderBgFrame = _colorRefs.COLORPICKER_HeaderBgFrame
+local COLORPICKER_CloseButton = _colorRefs.COLORPICKER_CloseButton
+local COLORPICKER_MoveBackButton = _colorRefs.COLORPICKER_MoveBackButton
+local COLORPICKER_MoveForwardButton = _colorRefs.COLORPICKER_MoveForwardButton
+local COLORPICKER_RandomColor = _colorRefs.COLORPICKER_RandomColor
+local COLORPICKER_ResetToDefault = _colorRefs.COLORPICKER_ResetToDefault
+local COLORPICKER_WindowDesc = _colorRefs.COLORPICKER_WindowDesc
+
+local _notificationRefs = buildNotificationsAndDemo(NotificationsGui, TABS_TabsBg, MAIN_TabsContentFolder)
+local NOTIFICATIONS_MainFrame = _notificationRefs.NOTIFICATIONS_MainFrame
+local button = _notificationRefs.button
+local dropdown = _notificationRefs.dropdown
+local toggle = _notificationRefs.toggle
+local colorPicker = _notificationRefs.colorPicker
+local textbox = _notificationRefs.textbox
+local slider = _notificationRefs.slider
+local keybind = _notificationRefs.keybind
 --───────────────|> Functional layer
 --──────────────────────────────────────────────────--
 
