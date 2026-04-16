@@ -1,6 +1,6 @@
---──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────--
+--──────────────────────────────────────────────────--
 --──────────────────|> Locals
---──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────--
+--──────────────────────────────────────────────────--
 
 --  Services
 local Players = game:GetService("Players")
@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
 
 --  Main
 local Player = Players.LocalPlayer
@@ -17,7 +18,7 @@ local Character = Player.Character or Player.CharacterAdded:Wait()
 
 --  Interface
 local PlayerGui = Player:WaitForChild("PlayerGui")
-local Default_Parent = CoreGui
+local Default_Parent = PlayerGui
 
 --  Menu settings
 local _scriptName = "Amphibia'"
@@ -33,12 +34,17 @@ local _resetImageId = "rbxassetid://438217404"
 local _freezeImageId = "rbxassetid://13200344988"
 local _tripleDotImageId = "rbxassetid://127075876244307"
 
---──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────--
+-- Tweens
+local DefTweenInfo = TweenInfo.new(0.36, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+
+--──────────────────────────────────────────────────--
 --──────────────────|> Functions
---──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────--
+--──────────────────────────────────────────────────--
 
-local ui = {}
-
+local function tween(instance,info,ptable)
+	return TweenService:Create(instance, info, ptable):Play()
+end
+qq
 local function GenerateRandomName(length)
 	length = tonumber(length) or 10
 
@@ -86,7 +92,7 @@ local function CreateLastColor(number, position, parent)
 	stroke2.Thickness = 1
 	stroke2.Transparency = 0.57
 	stroke2.ZIndex = 2
-	
+
 	return inst
 end
 
@@ -148,7 +154,7 @@ local function createTab(name, category, ScrollingFrameParent)
 	tabButton.TextSize = 15
 	tabButton.TextColor3 = Color3.fromRGB(255,255,255)
 	tabButton.TextXAlignment = Enum.TextXAlignment.Left
-	
+
 	local scrolling = Instance.new("ScrollingFrame")
 	scrolling.Parent = ScrollingFrameParent
 	scrolling.BackgroundTransparency = 1
@@ -162,7 +168,7 @@ local function createTab(name, category, ScrollingFrameParent)
 	scrolling.ScrollBarThickness = 0
 	scrolling.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right
 	scrolling.Visible = false
-	
+
 	local leftColumn = Instance.new("Frame")
 	leftColumn.Parent = scrolling
 	leftColumn.Name = "LeftColumn"
@@ -171,7 +177,7 @@ local function createTab(name, category, ScrollingFrameParent)
 	leftColumn.Position = UDim2.new(0,0,0,0)
 	leftColumn.Size = UDim2.new(0,285,0,0)
 	leftColumn.ZIndex = 1
-	
+
 	local rightColumn = Instance.new("Frame")
 	rightColumn.Parent = scrolling
 	rightColumn.Name = "RightColumn"
@@ -180,31 +186,31 @@ local function createTab(name, category, ScrollingFrameParent)
 	rightColumn.Position = UDim2.new(0.496,0,0,0)
 	rightColumn.Size = UDim2.new(0,285,0,0)
 	rightColumn.ZIndex = 1
-	
+
 	local leftColumnList = Instance.new("UIListLayout")
 	leftColumnList.Parent = leftColumn
 	leftColumnList.Padding = UDim.new(0,10)
 	leftColumnList.FillDirection = Enum.FillDirection.Vertical
 	leftColumnList.SortOrder = Enum.SortOrder.LayoutOrder
-	
+
 	local rightColumnList = Instance.new("UIListLayout")
 	rightColumnList.Parent = rightColumn
 	rightColumnList.Padding = UDim.new(0,10)
 	rightColumnList.FillDirection = Enum.FillDirection.Vertical
 	rightColumnList.SortOrder = Enum.SortOrder.LayoutOrder
-	
+
 	local leftColumnPadding = Instance.new("UIPadding")
 	leftColumnPadding.Parent = leftColumn
 	leftColumnPadding.PaddingBottom = UDim.new(0,10)
 	leftColumnPadding.PaddingLeft = UDim.new(0,10)
 	leftColumnPadding.PaddingTop = UDim.new(0,10)
-	
+
 	local rightColumnPadding = Instance.new("UIPadding")
 	rightColumnPadding.Parent = rightColumn
 	rightColumnPadding.PaddingBottom = UDim.new(0,10)
 	rightColumnPadding.PaddingLeft = UDim.new(0,10)
 	rightColumnPadding.PaddingTop = UDim.new(0,10)
-	
+
 	return tabButton, scrolling
 end
 
@@ -212,7 +218,7 @@ local function createSection(name, scrolling, columnSide)
 	if name == nil then warn("name (1) is nil") end
 	if scrolling == nil then warn("scrolling (2) is nil") end
 	if columnSide == nil then warn("columnSide (3) is nil") end
-	
+
 	local section = Instance.new("Frame")
 	if columnSide == "Left" or columnSide == "left" or columnSide == "l" then
 		section.Parent = scrolling:WaitForChild("LeftColumn")
@@ -225,11 +231,11 @@ local function createSection(name, scrolling, columnSide)
 	section.Size = UDim2.new(0,276,0,0)
 	section.ZIndex = 1
 	section.Name = name
-	
+
 	local sectionCorner = Instance.new("UICorner")
 	sectionCorner.Parent = section
 	sectionCorner.CornerRadius = UDim.new(0,4)
-	
+
 	local sectionGradient = Instance.new("UIGradient")
 	sectionGradient.Parent = section
 	sectionGradient.Rotation = 90
@@ -237,24 +243,24 @@ local function createSection(name, scrolling, columnSide)
 		NumberSequenceKeypoint.new(0,0,0),
 		NumberSequenceKeypoint.new(1,0.831,0)
 	})
-	
+
 	local sectionSizeCon = Instance.new("UISizeConstraint")
 	sectionSizeCon.Parent = section
 	sectionSizeCon.MinSize = Vector2.new(0,60)
-	
+
 	local sectionStroke1 = Instance.new("UIStroke")
 	sectionStroke1.Parent = section
 	sectionStroke1.Color = Color3.fromRGB(0,0,0)
 	sectionStroke1.Thickness = 1
 	sectionStroke1.Transparency = 0.14
 	sectionStroke1.ZIndex = 2
-	
+
 	local sectionStroke2 = Instance.new("UIStroke")
 	sectionStroke2.Parent = section
 	sectionStroke2.Color = Color3.fromRGB(40,40,40)
 	sectionStroke2.Thickness = 2
 	sectionStroke2.ZIndex = 1
-	
+
 	local sectionStroke2Gradient = Instance.new("UIGradient")
 	sectionStroke2Gradient.Parent = sectionStroke2
 	sectionStroke2Gradient.Rotation = 90
@@ -262,7 +268,7 @@ local function createSection(name, scrolling, columnSide)
 		NumberSequenceKeypoint.new(0,0,0),
 		NumberSequenceKeypoint.new(1,0.444,0)
 	})
-	
+
 	local sectionHeaderFrame = Instance.new("Frame")
 	sectionHeaderFrame.Parent = section
 	sectionHeaderFrame.Name = "Header"
@@ -270,17 +276,17 @@ local function createSection(name, scrolling, columnSide)
 	sectionHeaderFrame.Size = UDim2.new(0,276,0,35)
 	sectionHeaderFrame.Position = UDim2.new(0,0,0,0)
 	sectionHeaderFrame.ZIndex = 1
-	
+
 	local sectionHeaderFrameList = Instance.new("UIListLayout")
 	sectionHeaderFrameList.Parent = sectionHeaderFrame
 	sectionHeaderFrameList.Padding = UDim.new(0,7)
 	sectionHeaderFrameList.SortOrder = Enum.SortOrder.LayoutOrder
 	sectionHeaderFrameList.HorizontalFlex = Enum.UIFlexAlignment.Fill
-	
+
 	local sectionHeaderFramePadding = Instance.new("UIPadding")
 	sectionHeaderFramePadding.Parent = sectionHeaderFrame
 	sectionHeaderFramePadding.PaddingTop = UDim.new(0,3)
-	
+
 	local sectionHeaderFrameLine = Instance.new("Frame")
 	sectionHeaderFrameLine.Parent = sectionHeaderFrame
 	sectionHeaderFrameLine.Name = "Line"
@@ -288,7 +294,7 @@ local function createSection(name, scrolling, columnSide)
 	sectionHeaderFrameLine.Size = UDim2.new(0,276,0,1)
 	sectionHeaderFrameLine.ZIndex = 1
 	sectionHeaderFrameLine.LayoutOrder = 2
-	
+
 	local sectionHeaderFrameLineGradient = Instance.new("UIGradient")
 	sectionHeaderFrameLineGradient.Parent = sectionHeaderFrameLine
 	sectionHeaderFrameLineGradient.Transparency = NumberSequence.new({
@@ -297,7 +303,7 @@ local function createSection(name, scrolling, columnSide)
 		NumberSequenceKeypoint.new(0.9,0.5,0),
 		NumberSequenceKeypoint.new(1,1,0)
 	})
-	
+
 	local sectionHeaderFrameNameText = Instance.new("TextLabel")
 	sectionHeaderFrameNameText.Parent = sectionHeaderFrame
 	sectionHeaderFrameNameText.Name = "SectionName"
@@ -310,29 +316,29 @@ local function createSection(name, scrolling, columnSide)
 	sectionHeaderFrameNameText.TextColor3 = Color3.fromRGB(255,255,255)
 	sectionHeaderFrameNameText.TextSize = 15
 	sectionHeaderFrameNameText.TextXAlignment = Enum.TextXAlignment.Left
-	
+
 	local sectionHeaderFrameNameTextPadding = Instance.new("UIPadding")
 	sectionHeaderFrameNameTextPadding.Parent = sectionHeaderFrameNameText
 	sectionHeaderFrameNameTextPadding.PaddingLeft = UDim.new(0,7)
-	
+
 	local sectionHeaderFrameButtonHolder = Instance.new("Frame")
 	sectionHeaderFrameButtonHolder.Parent = section
 	sectionHeaderFrameButtonHolder.Name = "ButtonHolderFrame"
 	sectionHeaderFrameButtonHolder.BackgroundTransparency = 1
 	sectionHeaderFrameButtonHolder.AutomaticSize = Enum.AutomaticSize.Y
-    sectionHeaderFrameButtonHolder.Size = UDim2.new(0,276,0,0)
+	sectionHeaderFrameButtonHolder.Size = UDim2.new(0,276,0,0)
 	sectionHeaderFrameButtonHolder.ZIndex = 1
-	
+
 	local sectionHeaderFrameButtonHolderList = Instance.new("UIListLayout")
 	sectionHeaderFrameButtonHolderList.Parent = sectionHeaderFrameButtonHolder
 	sectionHeaderFrameButtonHolderList.SortOrder = Enum.SortOrder.LayoutOrder
-	
+
 	local sectionHeaderFrameButtonHolderPadding = Instance.new("UIPadding")
 	sectionHeaderFrameButtonHolderPadding.Parent = sectionHeaderFrameButtonHolder
 	sectionHeaderFrameButtonHolderPadding.PaddingBottom = UDim.new(0,8)
 	sectionHeaderFrameButtonHolderPadding.PaddingLeft = UDim.new(0,10)
 	sectionHeaderFrameButtonHolderPadding.PaddingTop = UDim.new(0,43)
-	
+
 	return section
 end
 
@@ -340,10 +346,27 @@ end
 --                                                                              CONTROLS CODING  --
 ---------------------------------------------------------------------------------------------------
 
-local function createButton(name, section, layoutOrder, ExplorerName)
+---------------------------------------------------------------------------------------------------
+--                                                                           CONTROLS FUNCTIONS  --
+---------------------------------------------------------------------------------------------------
+
+local function connectButton(button)
+	local nameText = button:WaitForChild("NameText")
+
+	button.MouseEnter:Connect(function()
+		tween(nameText, DefTweenInfo, {TextColor3 = Color3.fromRGB(210,210,210)})
+	end)
+
+	button.MouseLeave:Connect(function()
+		tween(nameText, DefTweenInfo, {TextColor3 = Color3.fromRGB(255,255,255)})
+	end)
+end
+
+local function createButton(name, section, func, layoutOrder, ExplorerName)
 	layoutOrder = layoutOrder or 0
 	ExplorerName = ExplorerName or "Button"
-	
+	func = func or function() end
+
 	local button = Instance.new("TextButton")
 	button.Parent = section:WaitForChild("ButtonHolderFrame")
 	button.Name = ExplorerName
@@ -354,7 +377,7 @@ local function createButton(name, section, layoutOrder, ExplorerName)
 	button.Text = ""
 	button.TextTransparency = 1
 	button.TextSize = 1
-	
+
 	local nameText = Instance.new("TextLabel")
 	nameText.Parent = button
 	nameText.Name = "NameText"
@@ -369,7 +392,11 @@ local function createButton(name, section, layoutOrder, ExplorerName)
 	nameText.TextStrokeColor3 = Color3.fromRGB(0,0,0)
 	nameText.TextStrokeTransparency = 0
 	nameText.TextXAlignment = Enum.TextXAlignment.Left
-	
+
+	connectButton(button)
+
+	button.MouseButton1Click:Connect(func)
+
 	return button
 end
 
@@ -398,7 +425,7 @@ local function createDropdown(name, section, layoutOrder, ExplorerName)
 	settingsImage.BorderSizePixel = 0
 	settingsImage.ImageTransparency = 0.26
 	settingsImage.ImageColor3 = Color3.fromRGB(255,255,255)
-	
+
 	local nameText = Instance.new("TextLabel")
 	nameText.Parent = dropdownButton
 	nameText.Name = "NameText"
@@ -444,7 +471,7 @@ local function createToggle(name, section, layoutOrder, ExplorerName)
 	local toggleButtonFrameCorner = Instance.new("UICorner")
 	toggleButtonFrameCorner.Parent = toggleButtonFrame
 	toggleButtonFrameCorner.CornerRadius = UDim.new(0,1)
-	
+
 	local toggleButtonFrameGradient = Instance.new("UIGradient")
 	toggleButtonFrameGradient.Parent = toggleButtonFrame
 	toggleButtonFrameGradient.Rotation = -90
@@ -458,14 +485,14 @@ local function createToggle(name, section, layoutOrder, ExplorerName)
 	toggleButtonFrameStroke1.Color = Color3.fromRGB(54,54,54)
 	toggleButtonFrameStroke1.Thickness = 2
 	toggleButtonFrameStroke1.ZIndex = 1
-	
+
 	local toggleButtonFrameStroke2 = Instance.new("UIStroke")
 	toggleButtonFrameStroke2.Parent = toggleButtonFrame
 	toggleButtonFrameStroke2.Color = Color3.fromRGB(0,0,0)
 	toggleButtonFrameStroke2.Thickness = 1
 	toggleButtonFrameStroke2.Transparency = 0.29
 	toggleButtonFrameStroke2.ZIndex = 2
-	
+
 	local toggleButtonFrameActive = Instance.new("Frame")
 	toggleButtonFrameActive.Parent = toggleButtonFrame
 	toggleButtonFrameActive.BackgroundColor3 = Color3.fromRGB(255,255,255)
@@ -480,7 +507,7 @@ local function createToggle(name, section, layoutOrder, ExplorerName)
 	local toggleButtonFrameActiveCorner = Instance.new("UICorner")
 	toggleButtonFrameActiveCorner.Parent = toggleButtonFrameActive
 	toggleButtonFrameActiveCorner.CornerRadius = UDim.new(0,1)
-	
+
 	local toggleButtonFrameActiveGradient = Instance.new("UIGradient")
 	toggleButtonFrameActiveGradient.Parent = toggleButtonFrameActive
 	toggleButtonFrameActiveGradient.Rotation = -90
@@ -542,7 +569,7 @@ local function createColorPicker(name, section, layoutOrder, ExplorerName)
 	local colorPreviewFrameCorner = Instance.new("UICorner")
 	colorPreviewFrameCorner.Parent = colorPreviewFrame
 	colorPreviewFrameCorner.CornerRadius = UDim.new(0,4)
-	
+
 	local colorPreviewFrameGradient = Instance.new("UIGradient")
 	colorPreviewFrameGradient.Parent = colorPreviewFrame
 	colorPreviewFrameGradient.Rotation = -90
@@ -617,7 +644,7 @@ local function createTextbox(name, section, layoutOrder, ExplorerName)
 	local textboxCorner = Instance.new("UICorner")
 	textboxCorner.Parent = textbox
 	textboxCorner.CornerRadius = UDim.new(0,4)
-	
+
 	local textboxGradient = Instance.new("UIGradient")
 	textboxGradient.Parent = textbox
 	textboxGradient.Rotation = -90
@@ -684,7 +711,7 @@ local function createSlider(name, section, layoutOrder, ExplorerName)
 	sliderLine.Size = UDim2.new(0,181,0,3)
 	sliderLine.ZIndex = 1
 	sliderLine.Name = "SliderLine"
-	
+
 	local sliderLineCorner = Instance.new("UICorner")
 	sliderLineCorner.Parent = sliderLine
 	sliderLineCorner.CornerRadius = UDim.new(1,0)
@@ -716,7 +743,7 @@ local function createSlider(name, section, layoutOrder, ExplorerName)
 	local sliderKnobCorner = Instance.new("UICorner")
 	sliderKnobCorner.Parent = sliderKnob
 	sliderKnobCorner.CornerRadius = UDim.new(1,0)
-	
+
 	local sliderKnobGradient = Instance.new("UIGradient")
 	sliderKnobGradient.Parent = sliderKnob
 	sliderKnobGradient.Rotation = -45
@@ -724,7 +751,7 @@ local function createSlider(name, section, layoutOrder, ExplorerName)
 		ColorSequenceKeypoint.new(0, Color3.fromRGB(109,109,109)),
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
 	})
-	
+
 	local sliderValueTextbox = Instance.new("TextBox")
 	sliderValueTextbox.Parent = sliderButton
 	sliderValueTextbox.BackgroundTransparency = 1
@@ -773,7 +800,7 @@ local function createKeybind(name, section, defKeybindValue, layoutOrder, Explor
 	keybindButton.Text = ""
 	keybindButton.TextTransparency = 1
 	keybindButton.BorderSizePixel = 0
-	keybindButton.Interactable = true
+	keybindButton.Interactable = false
 
 	local keybindFrame = Instance.new("Frame")
 	keybindFrame.Parent = keybindButton
@@ -787,7 +814,7 @@ local function createKeybind(name, section, defKeybindValue, layoutOrder, Explor
 	local keybindFrameCorner = Instance.new("UICorner")
 	keybindFrameCorner.Parent = keybindFrame
 	keybindFrameCorner.CornerRadius = UDim.new(0,4)
-	
+
 	local keybindFrameGradient = Instance.new("UIGradient")
 	keybindFrameGradient.Parent = keybindFrame
 	keybindFrameGradient.Rotation = -90
@@ -795,7 +822,7 @@ local function createKeybind(name, section, defKeybindValue, layoutOrder, Explor
 		ColorSequenceKeypoint.new(0, Color3.fromRGB(93, 93, 93)),
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
 	})
-	
+
 	local keybindFrameStroke1 = Instance.new("UIStroke")
 	keybindFrameStroke1.Parent = keybindFrame
 	keybindFrameStroke1.Color = Color3.fromRGB(61,61,61)
@@ -808,7 +835,7 @@ local function createKeybind(name, section, defKeybindValue, layoutOrder, Explor
 	keybindFrameStroke2.Thickness = 1
 	keybindFrameStroke2.Transparency = 0.43
 	keybindFrameStroke2.ZIndex = 2
-	
+
 	local keybindText = Instance.new("TextLabel")
 	keybindText.Parent = keybindFrame
 	keybindText.Name = "KeybindText"
@@ -842,9 +869,9 @@ local function createKeybind(name, section, defKeybindValue, layoutOrder, Explor
 end
 
 
---──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────--
+--──────────────────────────────────────────────────--
 --──────────────────|> Build core ui
---──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────--
+--──────────────────────────────────────────────────--
 
 local MainGui = Instance.new("ScreenGui")
 MainGui.Parent = Default_Parent
@@ -864,15 +891,15 @@ ColorPickerGui.Name = "ColorPickerGui"
 
 local NotificationsGui = Instance.new("ScreenGui")
 NotificationsGui.Parent = MainGui
-NotificationsGui.Enabled = false
+NotificationsGui.Enabled = true
 NotificationsGui.IgnoreGuiInset = true
 NotificationsGui.ResetOnSpawn = false
 NotificationsGui.DisplayOrder = 100
 NotificationsGui.Name = "NotificationsGui"
 
----------------------------------------------------------------------------------------------------
---                                                                                       MAIN    --
----------------------------------------------------------------------------------------------------
+------------------------------------------------
+--                                         Main
+------------------------------------------------
 
 local MAIN_MainBgFrame = Instance.new("Frame")
 MAIN_MainBgFrame.Parent = MainGui
@@ -1107,9 +1134,9 @@ MAIN_HeaderFrameStrokeGlowGradient.Transparency = NumberSequence.new{
 	NumberSequenceKeypoint.new(1,1,0)
 }
 
----------------------------------------------------------------------------------------------------
---                                                                                         TABS  --
----------------------------------------------------------------------------------------------------
+------------------------------------------------
+--                                         Tabs
+------------------------------------------------
 
 local TABS_TabsBg = Instance.new("Frame")
 TABS_TabsBg.Parent = MAIN_MainBgFrame
@@ -1180,9 +1207,9 @@ TABS_TabsSplitterLineGradient.Transparency = NumberSequence.new{
 	NumberSequenceKeypoint.new(1,1,0)
 }
 
----------------------------------------------------------------------------------------------------
---                                                                                 COLOR PICKER  --
----------------------------------------------------------------------------------------------------
+------------------------------------------------
+--                                  Color picker
+------------------------------------------------
 
 local COLORPICKER_MainFrame = Instance.new("Frame")
 COLORPICKER_MainFrame.Parent = ColorPickerGui
@@ -1564,9 +1591,9 @@ COLORPCIKER_OtherText.TextSize = 12
 COLORPCIKER_OtherText.Text = "Other: [no data, under development]"
 COLORPCIKER_OtherText.TextXAlignment = Enum.TextXAlignment.Left
 
----------------------------------------------------------------------------------------------------
---                                                                                NOTIFICATIONS  --
----------------------------------------------------------------------------------------------------
+------------------------------------------------
+--                                 Notifications
+------------------------------------------------
 
 local NOTIFICATIONS_MainFrame = Instance.new("Frame")
 NOTIFICATIONS_MainFrame.Parent = NotificationsGui
@@ -1607,6 +1634,7 @@ NOTIFICATIONS_DragLine.Name = "DragLine"
 NOTIFICATIONS_DragLine.Position = UDim2.new(0.024,0,0.169,0)
 NOTIFICATIONS_DragLine.Size = UDim2.new(0,5,0,43)
 NOTIFICATIONS_DragLine.ZIndex = 1
+NOTIFICATIONS_DragLine.BackgroundColor3 = Color3.fromRGB(255,255,255)
 
 local NOTIFICATIONS_DragLineCorner = Instance.new("UICorner")
 NOTIFICATIONS_DragLineCorner.Parent = NOTIFICATIONS_DragLine
@@ -1687,6 +1715,8 @@ NOTIFICATIONS_FreezeButtonIcon.Position = UDim2.new(0.5,0,0.5,0)
 NOTIFICATIONS_FreezeButtonIcon.Size = UDim2.new(0,13,0,13)
 NOTIFICATIONS_FreezeButtonIcon.Image = _freezeImageId
 NOTIFICATIONS_FreezeButtonIcon.ImageTransparency = 0.84
+NOTIFICATIONS_FreezeButtonIcon.BackgroundTransparency = 1
+NOTIFICATIONS_FreezeButtonIcon.AnchorPoint = Vector2.new(.5,.5)
 
 local NOTIFICATIONS_TimeLeft = Instance.new("TextLabel")
 NOTIFICATIONS_TimeLeft.Parent = NOTIFICATIONS_MainFrame
@@ -1695,9 +1725,10 @@ NOTIFICATIONS_TimeLeft.BackgroundTransparency = 1
 NOTIFICATIONS_TimeLeft.Position = UDim2.new(0.834,0,0.646,0)
 NOTIFICATIONS_TimeLeft.Size = UDim2.new(0,35,0,23)
 NOTIFICATIONS_TimeLeft.ZIndex = 1
-NOTIFICATIONS_TimeLeft.Text = "nilS"
+NOTIFICATIONS_TimeLeft.Text = "3s"
+NOTIFICATIONS_TimeLeft.Font = Enum.Font.RobotoMono
 NOTIFICATIONS_TimeLeft.TextColor3 = Color3.fromRGB(63,63,63)
-NOTIFICATIONS_TimeLeft.TextSize = 13
+NOTIFICATIONS_TimeLeft.TextSize = 11
 NOTIFICATIONS_TimeLeft.TextXAlignment = Enum.TextXAlignment.Right
 
 local NOTIFICATIONS_NotificationName = Instance.new("TextLabel")
@@ -1709,6 +1740,7 @@ NOTIFICATIONS_NotificationName.Position = UDim2.new(0.075,0,0.031,0)
 NOTIFICATIONS_NotificationName.Size = UDim2.new(0,72,0,23)
 NOTIFICATIONS_NotificationName.Font = Enum.Font.RobotoMono
 NOTIFICATIONS_NotificationName.Text = "Notification name"
+NOTIFICATIONS_NotificationName.TextSize = 14
 NOTIFICATIONS_NotificationName.TextColor3 = Color3.fromRGB(255,255,255)
 NOTIFICATIONS_NotificationName.TextStrokeTransparency = 0.42
 NOTIFICATIONS_NotificationName.TextStrokeColor3 = Color3.fromRGB(0,0,0)
@@ -1731,7 +1763,9 @@ local Category1, c1TabsHolderFrame = createTabCategory("Main", TABS_TabsBg)
 local Tab1, tab1Scrolling = createTab("Player", c1TabsHolderFrame, MAIN_TabsContentFolder)
 local Tab2, tab2Scrolling = createTab("World", c1TabsHolderFrame, MAIN_TabsContentFolder)
 local section = createSection("Main", tab1Scrolling, "left")
-local button = createButton("button", section)
+local button = createButton("button", section, function()
+	print("pressed")
+end)
 local dropdown = createDropdown("dropdown", section, -1)
 local toggle = createToggle("toggle", section)
 local colorPicker = createColorPicker("color picker", section)
@@ -1741,5 +1775,3 @@ local slider = createSlider("slider", section2)
 local keybind = createKeybind("keybind", section2, "H")
 
 tab1Scrolling.Visible = true
-
-return ui
