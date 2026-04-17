@@ -1012,7 +1012,7 @@ function Window:_BuildCloseConfirm()
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		Size = UDim2.new(0, 286, 0, 132),
 		BackgroundColor3 = Theme.Colors.Background,
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		ZIndex = 201,
 	})
@@ -1028,20 +1028,9 @@ function Window:_BuildCloseConfirm()
 	AddStroke(self.ConfirmBox, Color3.fromRGB(47, 47, 47), 2, 0, 1)
 	AddStroke(self.ConfirmBox, Color3.fromRGB(0, 0, 0), 1, 0.18, 2)
 
-	local accentLine = New("Frame", {
-		Parent = self.ConfirmBox,
-		Name = "AccentLine",
-		BackgroundColor3 = Theme.Colors.Accent,
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Position = UDim2.new(0, 0, 0, 0),
-		Size = UDim2.new(1, 0, 0, 2),
-		Visible = false,
-		ZIndex = 202,
-	})
-
 	local title = New("TextLabel", {
 		Parent = self.ConfirmBox,
+		Name = "Title",
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0, 14, 0, 13),
 		Size = UDim2.new(1, -28, 0, 25),
@@ -1049,13 +1038,14 @@ function Window:_BuildCloseConfirm()
 		Text = "Close menu?",
 		TextSize = 15,
 		TextColor3 = Theme.Colors.Text,
-		TextTransparency = 1,
+		TextTransparency = 0,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ZIndex = 202,
 	})
 
 	local desc = New("TextLabel", {
 		Parent = self.ConfirmBox,
+		Name = "Description",
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0, 14, 0, 40),
 		Size = UDim2.new(1, -28, 0, 28),
@@ -1063,7 +1053,7 @@ function Window:_BuildCloseConfirm()
 		Text = "Are you sure you want to hide this UI?",
 		TextSize = 11,
 		TextColor3 = Color3.fromRGB(160, 160, 160),
-		TextTransparency = 1,
+		TextTransparency = 0,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ZIndex = 202,
@@ -1075,13 +1065,13 @@ function Window:_BuildCloseConfirm()
 		Position = UDim2.new(0, 14, 1, -42),
 		Size = UDim2.new(0, 112, 0, 28),
 		BackgroundColor3 = Theme.Colors.Accent,
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		Font = Theme.Font,
 		Text = "Yes",
 		TextSize = 14,
 		TextColor3 = Theme.Colors.Text,
-		TextTransparency = 1,
+		TextTransparency = 0,
 		AutoButtonColor = false,
 		ZIndex = 202,
 	})
@@ -1093,19 +1083,26 @@ function Window:_BuildCloseConfirm()
 		Position = UDim2.new(1, -126, 1, -42),
 		Size = UDim2.new(0, 112, 0, 28),
 		BackgroundColor3 = Color3.fromRGB(38, 38, 38),
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		Font = Theme.Font,
 		Text = "Cancel",
-		TextSize = 15,
+		TextSize = 13,
 		TextColor3 = Theme.Colors.Text,
-		TextTransparency = 1,
+		TextTransparency = 0,
 		AutoButtonColor = false,
 		ZIndex = 202,
 	})
 	AddCorner(cancel, 4)
 
-	self.ConfirmObjects = { self.ConfirmBox, title, desc, yes, cancel }
+	self.ConfirmObjects = {
+		self.ConfirmBox,
+		title,
+		desc,
+		yes,
+		cancel,
+	}
+
 	CaptureFadeBase(self.ConfirmBox)
 	TweenFadeTree(self.ConfirmBox, false, TweenInfo.new(0, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
 
@@ -1123,13 +1120,22 @@ function Window:_ShowCloseConfirm()
 	self.ConfirmOverlay.Visible = true
 	self.ConfirmBox.Size = UDim2.new(0, 270, 0, 122)
 
-	Tween(self.ConfirmOverlay, Theme.Tween.Fast, { BackgroundTransparency = 0.45 })
-	Tween(self.ConfirmBox, Theme.Tween.Spring, { Size = UDim2.new(0, 286, 0, 132) })
+	Tween(self.ConfirmOverlay, Theme.Tween.Fast, {
+		BackgroundTransparency = 0.45,
+	})
+
+	Tween(self.ConfirmBox, Theme.Tween.Spring, {
+		Size = UDim2.new(0, 286, 0, 132),
+	})
+
 	TweenFadeTree(self.ConfirmBox, true, Theme.Tween.Fast)
 end
 
 function Window:_HideCloseConfirm()
-	Tween(self.ConfirmOverlay, Theme.Tween.Fast, { BackgroundTransparency = 1 })
+	Tween(self.ConfirmOverlay, Theme.Tween.Fast, {
+		BackgroundTransparency = 1,
+	})
+
 	TweenFadeTree(self.ConfirmBox, false, Theme.Tween.Fast)
 
 	task.delay(0.18, function()
