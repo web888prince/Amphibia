@@ -1,3 +1,7 @@
+--// Amphibia GUI Library
+--// One-file ModuleScript
+--// Usage example is at the bottom of this file.
+
 local Amphibia = {}
 Amphibia.__index = Amphibia
 Amphibia.Version = "1.0.0"
@@ -2782,26 +2786,18 @@ function Window:_ReflowNotifications()
 	for i = #self.NotificationStack, 1, -1 do
 		local data = self.NotificationStack[i]
 		if data and data.Frame and data.Frame.Parent and not data.Manual then
-			local yOffset = -20 - (index * 73)
 			Tween(data.Frame, Theme.Tween.Smooth, {
-				Position = UDim2.new(1, -20, 1, yOffset),
+				Position = UDim2.new(1, -20, 1, -20 - (index * 73)),
 			})
 			index += 1
 		end
 	end
 end
 
-function Window:Notify(config)
-	if typeof(config) == "string" then
-		config = { Title = config }
-	end
-	config = config or {}
+function Window:_CreateNotificationUI(config)
+	local ui = {}
 
-	local duration = tonumber(config.Duration) or 3
-	local frozen = false
-	local closed = false
-
-	local frame = New("Frame", {
+	ui.Frame = New("Frame", {
 		Parent = self.Gui,
 		Name = "NotificationBackground",
 		AnchorPoint = Vector2.new(1, 1),
@@ -2812,20 +2808,19 @@ function Window:Notify(config)
 		ZIndex = 1001,
 		BorderSizePixel = 0,
 	})
-
-	AddCorner(frame, 4)
-	AddGradient(frame, {
+	AddCorner(ui.Frame, 4)
+	AddGradient(ui.Frame, {
 		Rotation = -90,
 		Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Color3.fromRGB(95, 95, 95)),
 			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
 		})
 	})
-	AddStroke(frame, Color3.fromRGB(56, 56, 56), 2, 1, 1)
-	AddStroke(frame, Color3.fromRGB(0, 0, 0), 1, 1, 2)
+	AddStroke(ui.Frame, Color3.fromRGB(56, 56, 56), 2, 1, 1)
+	AddStroke(ui.Frame, Color3.fromRGB(0, 0, 0), 1, 1, 2)
 
-	local dragLine = New("Frame", {
-		Parent = frame,
+	ui.DragLine = New("Frame", {
+		Parent = ui.Frame,
 		Name = "DragLine",
 		Position = UDim2.new(0.024, 0, 0.169, 0),
 		Size = UDim2.new(0, 5, 0, 43),
@@ -2834,18 +2829,18 @@ function Window:Notify(config)
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 	})
-	AddCorner(dragLine, 20)
-	AddGradient(dragLine, {
+	AddCorner(ui.DragLine, 20)
+	AddGradient(ui.DragLine, {
 		Rotation = 90,
 		Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Color3.fromRGB(146, 74, 255)),
 			ColorSequenceKeypoint.new(1, Theme.Colors.AccentDark),
 		})
 	})
-	AddStroke(dragLine, Color3.fromRGB(0, 0, 0), 1, 1, 1)
+	AddStroke(ui.DragLine, Color3.fromRGB(0, 0, 0), 1, 1, 1)
 
-	local timelineGlow = New("Frame", {
-		Parent = frame,
+	ui.TimeLineGlow = New("Frame", {
+		Parent = ui.Frame,
 		Name = "TimeLineGlow",
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 1,
@@ -2854,7 +2849,7 @@ function Window:Notify(config)
 		BorderSizePixel = 0,
 		ZIndex = 1002,
 	})
-	AddGradient(timelineGlow, {
+	AddGradient(ui.TimeLineGlow, {
 		Rotation = 90,
 		Transparency = NumberSequence.new({
 			NumberSequenceKeypoint.new(0, 1, 0),
@@ -2862,8 +2857,8 @@ function Window:Notify(config)
 		})
 	})
 
-	local timeline = New("Frame", {
-		Parent = frame,
+	ui.TimeLine = New("Frame", {
+		Parent = ui.Frame,
 		Name = "TimeLine",
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 1,
@@ -2872,16 +2867,16 @@ function Window:Notify(config)
 		ZIndex = 1003,
 		BorderSizePixel = 0,
 	})
-	AddCorner(timeline, 80)
-	AddGradient(timeline, {
+	AddCorner(ui.TimeLine, 80)
+	AddGradient(ui.TimeLine, {
 		Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Color3.fromRGB(137, 98, 255)),
 			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
 		})
 	})
 
-	local close = New("ImageButton", {
-		Parent = frame,
+	ui.Close = New("ImageButton", {
+		Parent = ui.Frame,
 		Name = "CloseButton",
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0.91, 0, 0.045, 0),
@@ -2892,8 +2887,8 @@ function Window:Notify(config)
 		ZIndex = 1004,
 	})
 
-	local freeze = New("ImageButton", {
-		Parent = frame,
+	ui.Freeze = New("ImageButton", {
+		Parent = ui.Frame,
 		Name = "FreezeButton",
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0.825, 0, 0.045, 0),
@@ -2903,8 +2898,8 @@ function Window:Notify(config)
 		ZIndex = 1004,
 	})
 
-	local freezeIcon = New("ImageLabel", {
-		Parent = freeze,
+	ui.FreezeIcon = New("ImageLabel", {
+		Parent = ui.Freeze,
 		Name = "FreezeButtonIcon",
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		Size = UDim2.new(0, 13, 0, 13),
@@ -2915,14 +2910,14 @@ function Window:Notify(config)
 		ZIndex = 1005,
 	})
 
-	local timeLeft = New("TextLabel", {
-		Parent = frame,
+	ui.TimeLeft = New("TextLabel", {
+		Parent = ui.Frame,
 		Name = "TimeLeft",
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0.835, 0, 0.645, 0),
 		Size = UDim2.new(0, 35, 0, 20),
 		ZIndex = 1004,
-		Text = tostring(duration) .. "s",
+		Text = tostring(config.Duration or 3) .. "s",
 		Font = Theme.Font,
 		TextColor3 = Color3.fromRGB(80, 80, 80),
 		TextTransparency = 1,
@@ -2930,8 +2925,8 @@ function Window:Notify(config)
 		TextXAlignment = Enum.TextXAlignment.Right,
 	})
 
-	local title = New("TextLabel", {
-		Parent = frame,
+	ui.Title = New("TextLabel", {
+		Parent = ui.Frame,
 		Name = "NotificationName",
 		BackgroundTransparency = 1,
 		ZIndex = 1004,
@@ -2948,8 +2943,8 @@ function Window:Notify(config)
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
 
-	local desc = New("TextLabel", {
-		Parent = frame,
+	ui.Description = New("TextLabel", {
+		Parent = ui.Frame,
 		Name = "NotificationDescription",
 		BackgroundTransparency = 1,
 		ZIndex = 1004,
@@ -2965,103 +2960,128 @@ function Window:Notify(config)
 		TextWrapped = true,
 	})
 
-	local notificationData = {
-		Frame = frame,
-		Manual = false,
-	}
-	table.insert(self.NotificationStack, notificationData)
+	return ui
+end
 
-	MakeDraggable(dragLine, frame, { Smooth = true })
-	dragLine.InputBegan:Connect(function(input)
+function Window:_FadeNotificationUI(ui, visible)
+	local textAlpha = visible and 0 or 1
+	local imageAlpha = visible and 0.84 or 1
+
+	Tween(ui.Frame, Theme.Tween.Fast, { BackgroundTransparency = visible and 0 or 1 })
+	Tween(ui.DragLine, Theme.Tween.Fast, { BackgroundTransparency = visible and 0 or 1 })
+	Tween(ui.TimeLineGlow, Theme.Tween.Fast, { BackgroundTransparency = visible and 0.3 or 1 })
+	Tween(ui.TimeLine, Theme.Tween.Fast, { BackgroundTransparency = visible and 0.45 or 1 })
+	Tween(ui.Close, Theme.Tween.Fast, { ImageTransparency = imageAlpha })
+	Tween(ui.FreezeIcon, Theme.Tween.Fast, { ImageTransparency = imageAlpha })
+	Tween(ui.TimeLeft, Theme.Tween.Fast, { TextTransparency = textAlpha })
+	Tween(ui.Title, Theme.Tween.Fast, { TextTransparency = textAlpha })
+	Tween(ui.Description, Theme.Tween.Fast, { TextTransparency = textAlpha })
+end
+
+function Window:Notify(config)
+	if typeof(config) == "string" then
+		config = { Title = config }
+	end
+	config = config or {}
+
+	local duration = tonumber(config.Duration) or 3
+	local ui = self:_CreateNotificationUI({
+		Title = config.Title,
+		Description = config.Description,
+		Duration = duration,
+	})
+
+	local state = {
+		Frame = ui.Frame,
+		Manual = false,
+		Closed = false,
+		Frozen = false,
+	}
+
+	table.insert(self.NotificationStack, state)
+	MakeDraggable(ui.DragLine, ui.Frame, { Smooth = true })
+
+	ui.DragLine.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			notificationData.Manual = true
+			state.Manual = true
 		end
 	end)
 
 	local function closeNotification()
-		if closed then
+		if state.Closed then
 			return
 		end
-		closed = true
+
+		state.Closed = true
 
 		for i = #self.NotificationStack, 1, -1 do
-			if self.NotificationStack[i] == notificationData then
+			if self.NotificationStack[i] == state then
 				table.remove(self.NotificationStack, i)
 				break
 			end
 		end
 
-		Tween(frame, Theme.Tween.Fast, { BackgroundTransparency = 1, Position = frame.Position + UDim2.new(0, 35, 0, 0) })
-		Tween(dragLine, Theme.Tween.Fast, { BackgroundTransparency = 1 })
-		Tween(timelineGlow, Theme.Tween.Fast, { BackgroundTransparency = 1 })
-		Tween(timeline, Theme.Tween.Fast, { BackgroundTransparency = 1 })
-		Tween(close, Theme.Tween.Fast, { ImageTransparency = 1 })
-		Tween(freezeIcon, Theme.Tween.Fast, { ImageTransparency = 1 })
-		Tween(timeLeft, Theme.Tween.Fast, { TextTransparency = 1 })
-		Tween(title, Theme.Tween.Fast, { TextTransparency = 1 })
-		Tween(desc, Theme.Tween.Fast, { TextTransparency = 1 })
+		Tween(ui.Frame, Theme.Tween.Fast, {
+			BackgroundTransparency = 1,
+			Position = ui.Frame.Position + UDim2.new(0, 35, 0, 0),
+		})
+		self:_FadeNotificationUI(ui, false)
 
 		task.delay(0.22, function()
-			if frame then
-				frame:Destroy()
+			if ui.Frame then
+				ui.Frame:Destroy()
 			end
 			self:_ReflowNotifications()
 		end)
 	end
 
-	close.MouseButton1Click:Connect(closeNotification)
-	freeze.MouseButton1Click:Connect(function()
-		frozen = not frozen
-		Tween(freezeIcon, Theme.Tween.Fast, {
-			ImageTransparency = frozen and 0.22 or 0.84,
+	ui.Close.MouseButton1Click:Connect(closeNotification)
+	ui.Freeze.MouseButton1Click:Connect(function()
+		state.Frozen = not state.Frozen
+		Tween(ui.FreezeIcon, Theme.Tween.Fast, {
+			ImageTransparency = state.Frozen and 0.22 or 0.84,
 		})
 	end)
 
-	close.MouseEnter:Connect(function()
-		Tween(close, Theme.Tween.Fast, { ImageTransparency = 0.35 })
-	end)
-	close.MouseLeave:Connect(function()
-		Tween(close, Theme.Tween.Fast, { ImageTransparency = 0.84 })
+	ui.Close.MouseEnter:Connect(function()
+		Tween(ui.Close, Theme.Tween.Fast, { ImageTransparency = 0.35 })
 	end)
 
-	freeze.MouseEnter:Connect(function()
-		Tween(freezeIcon, Theme.Tween.Fast, { ImageTransparency = frozen and 0.22 or 0.55 })
+	ui.Close.MouseLeave:Connect(function()
+		Tween(ui.Close, Theme.Tween.Fast, { ImageTransparency = 0.84 })
 	end)
-	freeze.MouseLeave:Connect(function()
-		Tween(freezeIcon, Theme.Tween.Fast, { ImageTransparency = frozen and 0.22 or 0.84 })
+
+	ui.Freeze.MouseEnter:Connect(function()
+		Tween(ui.FreezeIcon, Theme.Tween.Fast, { ImageTransparency = state.Frozen and 0.22 or 0.55 })
+	end)
+
+	ui.Freeze.MouseLeave:Connect(function()
+		Tween(ui.FreezeIcon, Theme.Tween.Fast, { ImageTransparency = state.Frozen and 0.22 or 0.84 })
 	end)
 
 	self:_ReflowNotifications()
+	self:_FadeNotificationUI(ui, true)
 
-	Tween(frame, Theme.Tween.Spring, {
+	Tween(ui.Frame, Theme.Tween.Spring, {
 		BackgroundTransparency = 0,
 		Position = UDim2.new(1, -20, 1, -20),
 	})
-	Tween(dragLine, Theme.Tween.Fast, { BackgroundTransparency = 0 })
-	Tween(timelineGlow, Theme.Tween.Fast, { BackgroundTransparency = 0.3 })
-	Tween(timeline, Theme.Tween.Fast, { BackgroundTransparency = 0.45 })
-	Tween(close, Theme.Tween.Fast, { ImageTransparency = 0.84 })
-	Tween(freezeIcon, Theme.Tween.Fast, { ImageTransparency = 0.84 })
-	Tween(timeLeft, Theme.Tween.Fast, { TextTransparency = 0 })
-	Tween(title, Theme.Tween.Fast, { TextTransparency = 0 })
-	Tween(desc, Theme.Tween.Fast, { TextTransparency = 0 })
 
 	task.spawn(function()
 		local remaining = duration
 		local last = os.clock()
 
-		while remaining > 0 and not closed do
+		while remaining > 0 and not state.Closed do
 			Services.RunService.Heartbeat:Wait()
 
 			local now = os.clock()
 			local delta = now - last
 			last = now
 
-			if not frozen then
+			if not state.Frozen then
 				remaining -= delta
-				local alpha = math.clamp(remaining / duration, 0, 1)
-				timeline.Size = UDim2.new(alpha, 0, 0, 2)
-				timeLeft.Text = tostring(math.max(0, math.ceil(remaining))) .. "s"
+				ui.TimeLine.Size = UDim2.new(math.clamp(remaining / duration, 0, 1), 0, 0, 2)
+				ui.TimeLeft.Text = tostring(math.max(0, math.ceil(remaining))) .. "s"
 			end
 		end
 
@@ -3069,7 +3089,7 @@ function Window:Notify(config)
 	end)
 
 	return {
-		Instance = frame,
+		Instance = ui.Frame,
 		Close = closeNotification,
 	}
 end
