@@ -4,7 +4,7 @@
 
 local Amphibia = {}
 Amphibia.__index = Amphibia
-Amphibia.Version = "1.0.4-final-polish-fix"
+Amphibia.Version = "1.0.4-final-polish-fix-compile1"
 
 --──────────────────────────────────────────────────--
 -- Services
@@ -1039,7 +1039,6 @@ function Window:_BuildCloseConfirm()
 		Visible = false,
 		ZIndex = 202,
 	})
-	})
 
 	local title = New("TextLabel", {
 		Parent = self.ConfirmBox,
@@ -1131,14 +1130,21 @@ end
 
 function Window:_HideCloseConfirm()
 	Tween(self.ConfirmOverlay, Theme.Tween.Fast, { BackgroundTransparency = 1 })
-
-	for _, object in ipairs(self.ConfirmObjects) do
-		if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
-			Tween(object, Theme.Tween.Fast, { TextTrfunction Window:_HideCloseConfirm()
-	Tween(self.ConfirmOverlay, Theme.Tween.Fast, { BackgroundTransparency = 1 })
 	TweenFadeTree(self.ConfirmBox, false, Theme.Tween.Fast)
 
-	task.delay(0.18, function()ble({}, Category)
+	task.delay(0.18, function()
+		if self.ConfirmOverlay then
+			self.ConfirmOverlay.Visible = false
+		end
+	end)
+end
+
+--──────────────────────────────────────────────────--
+-- Categories / Tabs / Sections
+--──────────────────────────────────────────────────--
+
+function Window:CreateCategory(name)
+	local category = setmetatable({}, Category)
 	category.Window = self
 	category.Name = name or "Category"
 	category.Tabs = {}
@@ -2874,7 +2880,7 @@ function Window:_ReflowNotifications()
 		local data = self.NotificationStack[i]
 		if data and data.Frame and data.Frame.Parent and not data.Manual then
 			Tween(data.Frame, Theme.Tween.Smooth, {
-				Position = UDim2.new(1, -20, 1, -20 - (index
+				Position = UDim2.new(1, -20, 1, -20 - (index * 80))
 			})
 			index += 1
 		end
