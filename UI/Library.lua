@@ -4,7 +4,7 @@
 
 local Amphibia = {}
 Amphibia.__index = Amphibia
-Amphibia.Version = "1.0.0"
+Amphibia.Version = "1.0.1-title-shadow-fix"
 
 --──────────────────────────────────────────────────--
 -- Services
@@ -3102,5 +3102,94 @@ Amphibia.Tween = Tween
 Amphibia.AddCorner = AddCorner
 Amphibia.AddStroke = AddStroke
 Amphibia.AddGradient = AddGradient
+
+--[[
+USAGE EXAMPLE:
+
+local Amphibia = require(path.to.Amphibia_Library_Module)
+
+local Window = Amphibia.CreateWindow({
+	Name = "Amphibia'",
+	Icon = "rbxassetid://76305975133668",
+	ToggleKey = Enum.KeyCode.RightShift,
+})
+
+local MainCategory = Window:CreateCategory("Main")
+local PlayerTab = MainCategory:CreateTab("Player")
+local WorldTab = MainCategory:CreateTab("World")
+
+local MainSection = PlayerTab:CreateSection("Main", "Left")
+local PlayerSection = PlayerTab:CreateSection("Player", "Right")
+
+MainSection:CreateButton({
+	Name = "Button",
+	Callback = function()
+		print("pressed")
+		Window:Notify({ Title = "Button", Description = "Button pressed", Duration = 3 })
+	end,
+})
+
+MainSection:CreateDropdown({
+	Name = "Dropdown",
+	Options = { "Option 1", "Option 2", "Option 3" },
+	Default = "Option 1",
+	Callback = function(value)
+		print("dropdown:", value)
+	end,
+})
+
+MainSection:CreateToggle({
+	Name = "Toggle",
+	Default = false,
+	Callback = function(value)
+		print("toggle:", value)
+	end,
+})
+
+MainSection:CreateColorPicker({
+	Name = "Color picker",
+	Default = Color3.fromRGB(150, 64, 255),
+	Callback = function(color)
+		print("color:", color)
+	end,
+})
+
+PlayerSection:CreateTextbox({
+	Name = "Textbox",
+	Placeholder = "Text",
+	Callback = function(text, enterPressed)
+		print("textbox:", text, enterPressed)
+	end,
+})
+
+PlayerSection:CreateSlider({
+	Name = "Slider",
+	Min = 0,
+	Max = 100,
+	Default = 25,
+	Step = 1,
+	Callback = function(value)
+		print("slider:", value)
+	end,
+})
+
+PlayerSection:CreateKeybind({
+	Name = "Keybind",
+	Default = Enum.KeyCode.H,
+	Callback = function(key)
+		print("key pressed:", key)
+	end,
+})
+
+local WorldSection = WorldTab:CreateSection("World", "Left")
+WorldSection:CreateButton({
+	Name = "World button",
+	Callback = function()
+		print("world")
+	end,
+})
+
+Window:SelectTab("Player")
+]]
 
 return Amphibia
