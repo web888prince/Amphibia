@@ -4,7 +4,7 @@
 
 local Amphibia = {}
 Amphibia.__index = Amphibia
-Amphibia.Version = "1.0.1-title-shadow-fix"
+Amphibia.Version = "1.0.2-visual-1to1-fix"
 
 --──────────────────────────────────────────────────--
 -- Services
@@ -535,26 +535,25 @@ function Amphibia.CreateWindow(config)
 	})
 
 	self.TitleShadow = New("TextLabel", {
-		Parent = self.HeaderFolder,
+		Parent = self.Title,
 		Name = "TextShadow",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.05, 1, 0.024, 1),
-		Size = UDim2.new(0, 145, 0, 34),
-		ZIndex = 4,
+		Position = UDim2.new(0, 0, -0.1, 0),
+		Size = UDim2.new(0, 96, 0, 47),
+		ZIndex = 5,
 		Font = Theme.Font,
 		Text = self.Name,
 		TextSize = 20,
 		TextColor3 = Color3.fromRGB(0, 0, 0),
-		TextTransparency = 0.08,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 
 	AddGradient(self.TitleShadow, {
 		Rotation = -90,
 		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.18, 0),
-			NumberSequenceKeypoint.new(0.5, 0.45, 0),
-			NumberSequenceKeypoint.new(1, 0.18, 0),
+			NumberSequenceKeypoint.new(0, 0, 0),
+			NumberSequenceKeypoint.new(0.5, 0.369, 0),
+			NumberSequenceKeypoint.new(1, 0, 0),
 		})
 	})
 
@@ -672,7 +671,7 @@ function Amphibia.CreateWindow(config)
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 0.2,
 		Position = UDim2.new(0, 0, 0.102, 0),
-		Size = UDim2.new(0, 185, 0, 1),
+		Size = UDim2.new(0, 185, 0, -1),
 		ZIndex = 4,
 	})
 
@@ -1032,7 +1031,7 @@ function Window:_BuildCloseConfirm()
 		BorderSizePixel = 0,
 		Font = Theme.Font,
 		Text = "Yes",
-		TextSize = 13,
+		TextSize = 14,
 		TextColor3 = Theme.Colors.Text,
 		TextTransparency = 1,
 		AutoButtonColor = false,
@@ -2273,7 +2272,15 @@ function Window:_BuildColorPicker()
 			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
 		})
 	})
-	AddStroke(header, Theme.Colors.Accent, 1, 0, 3)
+	local colorPickerHeaderStroke = AddStroke(header, Theme.Colors.Accent, 1, 0, 3)
+	AddGradient(colorPickerHeaderStroke, {
+		Rotation = -90,
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0, 0),
+			NumberSequenceKeypoint.new(0.05, 1, 0),
+			NumberSequenceKeypoint.new(1, 1, 0),
+		})
+	})
 
 	local glow = New("Frame", {
 		Parent = picker,
@@ -2745,6 +2752,7 @@ function Window:_OpenColorPicker(target)
 
 	local startColor = target.Color or Color3.fromRGB(255, 255, 255)
 	self:_SetPickerColor(startColor, true)
+	self:_AddRecentColor(startColor)
 
 	self.ColorPickerFrame.Visible = true
 	self.ColorPickerFrame.Size = UDim2.new(0, 570, 0, 390)
@@ -2786,7 +2794,7 @@ function Window:_ReflowNotifications()
 		local data = self.NotificationStack[i]
 		if data and data.Frame and data.Frame.Parent and not data.Manual then
 			Tween(data.Frame, Theme.Tween.Smooth, {
-				Position = UDim2.new(1, -20, 1, -20 - (index * 73)),
+				Position = UDim2.new(1, -20, 1, -20 - (index * 91))
 			})
 			index += 1
 		end
@@ -2803,7 +2811,7 @@ function Window:_CreateNotificationUI(config)
 		Position = UDim2.new(1, 300, 1, -20),
 		BackgroundColor3 = Theme.Colors.Header,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0, 253, 0, 65),
+		Size = UDim2.new(0, 310, 0, 82),
 		ZIndex = 1001,
 		BorderSizePixel = 0,
 	})
@@ -2821,8 +2829,8 @@ function Window:_CreateNotificationUI(config)
 	ui.DragLine = New("Frame", {
 		Parent = ui.Frame,
 		Name = "DragLine",
-		Position = UDim2.new(0.024, 0, 0.169, 0),
-		Size = UDim2.new(0, 5, 0, 43),
+		Position = UDim2.new(0.022, 0, 0.16, 0),
+		Size = UDim2.new(0, 5, 0, 56),
 		ZIndex = 1003,
 		BackgroundColor3 = Theme.Colors.Text,
 		BackgroundTransparency = 1,
@@ -2843,8 +2851,8 @@ function Window:_CreateNotificationUI(config)
 		Name = "TimeLineGlow",
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, 0.72, 0),
-		Size = UDim2.new(1, 0, 0, 17),
+		Position = UDim2.new(0, 0, 0.735, 0),
+		Size = UDim2.new(1, 0, 0, 20),
 		BorderSizePixel = 0,
 		ZIndex = 1002,
 	})
@@ -2878,8 +2886,8 @@ function Window:_CreateNotificationUI(config)
 		Parent = ui.Frame,
 		Name = "CloseButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.91, 0, 0.045, 0),
-		Size = UDim2.new(0, 20, 0, 20),
+		Position = UDim2.new(0.915, 0, 0.035, 0),
+		Size = UDim2.new(0, 24, 0, 24),
 		ImageTransparency = 1,
 		Image = Theme.Images.Close,
 		AutoButtonColor = false,
@@ -2890,8 +2898,8 @@ function Window:_CreateNotificationUI(config)
 		Parent = ui.Frame,
 		Name = "FreezeButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.825, 0, 0.045, 0),
-		Size = UDim2.new(0, 20, 0, 20),
+		Position = UDim2.new(0.84, 0, 0.035, 0),
+		Size = UDim2.new(0, 24, 0, 24),
 		ImageTransparency = 1,
 		AutoButtonColor = false,
 		ZIndex = 1004,
@@ -2913,8 +2921,8 @@ function Window:_CreateNotificationUI(config)
 		Parent = ui.Frame,
 		Name = "TimeLeft",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.835, 0, 0.645, 0),
-		Size = UDim2.new(0, 35, 0, 20),
+		Position = UDim2.new(0.83, 0, 0.63, 0),
+		Size = UDim2.new(0, 46, 0, 22),
 		ZIndex = 1004,
 		Text = tostring(config.Duration or 3) .. "s",
 		Font = Theme.Font,
@@ -2929,8 +2937,8 @@ function Window:_CreateNotificationUI(config)
 		Name = "NotificationName",
 		BackgroundTransparency = 1,
 		ZIndex = 1004,
-		Position = UDim2.new(0.075, 0, 0.08, 0),
-		Size = UDim2.new(0, 172, 0, 18),
+		Position = UDim2.new(0.072, 0, 0.075, 0),
+		Size = UDim2.new(0, 210, 0, 21),
 		Font = Theme.Font,
 		Text = config.Title or "Notification",
 		TextSize = 13,
@@ -2947,13 +2955,13 @@ function Window:_CreateNotificationUI(config)
 		Name = "NotificationDescription",
 		BackgroundTransparency = 1,
 		ZIndex = 1004,
-		Position = UDim2.new(0.075, 0, 0.36, 0),
-		Size = UDim2.new(0, 182, 0, 28),
+		Position = UDim2.new(0.072, 0, 0.33, 0),
+		Size = UDim2.new(0, 230, 0, 38),
 		Font = Theme.Font,
 		Text = config.Description or "",
 		TextColor3 = Color3.fromRGB(155, 155, 155),
 		TextTransparency = 1,
-		TextSize = 10,
+		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextWrapped = true,
