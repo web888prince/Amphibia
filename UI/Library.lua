@@ -4,7 +4,7 @@
 
 local Amphibia = {}
 Amphibia.__index = Amphibia
-Amphibia.Version = "1.0.3-layout-offset-fix"
+Amphibia.Version = "1.0.4-final-polish-fix"
 
 --──────────────────────────────────────────────────--
 -- Services
@@ -231,6 +231,60 @@ local function SetTreeTransparency(root, alpha)
 			object.ImageTransparency = math.clamp(alpha, object.ImageTransparency, 1)
 		elseif object:IsA("UIStroke") then
 			object.Transparency = math.clamp(alpha, object.Transparency, 1)
+		end
+	end
+end
+
+local function CaptureFadeBase(root)
+	local objects = { root }
+	for _, object in ipairs(root:GetDescendants()) do
+		table.insert(objects, object)
+	end
+
+	for _, object in ipairs(objects) do
+		if object:IsA("GuiObject") and object:GetAttribute("BaseBackgroundTransparency") == nil then
+			object:SetAttribute("BaseBackgroundTransparency", object.BackgroundTransparency)
+		end
+
+		if (object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox")) and object:GetAttribute("BaseTextTransparency") == nil then
+			object:SetAttribute("BaseTextTransparency", object.TextTransparency)
+		end
+
+		if (object:IsA("ImageLabel") or object:IsA("ImageButton")) and object:GetAttribute("BaseImageTransparency") == nil then
+			object:SetAttribute("BaseImageTransparency", object.ImageTransparency)
+		end
+
+		if object:IsA("UIStroke") and object:GetAttribute("BaseTransparency") == nil then
+			object:SetAttribute("BaseTransparency", object.Transparency)
+		end
+	end
+end
+
+local function TweenFadeTree(root, visible, info)
+	if not root then
+		return
+	end
+
+	local objects = { root }
+	for _, object in ipairs(root:GetDescendants()) do
+		table.insert(objects, object)
+	end
+
+	for _, object in ipairs(objects) do
+		if object:IsA("GuiObject") then
+			local targetBackground = visible and (object:GetAttribute("BaseBackgroundTransparency") or object.BackgroundTransparency) or 1
+			Tween(object, info or Theme.Tween.Fast, { BackgroundTransparency = targetBackground })
+		end
+
+		if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
+			local targetText = visible and (object:GetAttribute("BaseTextTransparency") or 0) or 1
+			Tween(object, info or Theme.Tween.Fast, { TextTransparency = targetText })
+		elseif object:IsA("ImageLabel") or object:IsA("ImageButton") then
+			local targetImage = visible and (object:GetAttribute("BaseImageTransparency") or 0) or 1
+			Tween(object, info or Theme.Tween.Fast, { ImageTransparency = targetImage })
+		elseif object:IsA("UIStroke") then
+			local targetStroke = visible and (object:GetAttribute("BaseTransparency") or 0) or 1
+			Tween(object, info or Theme.Tween.Fast, { Transparency = targetStroke })
 		end
 	end
 end
@@ -722,7 +776,7 @@ function Amphibia.CreateWindow(config)
 	self:_BuildCloseConfirm()
 	self:_BuildColorPicker()
 
-	MakeDraggable(self.Header, self.Main)
+	MakeDraggable(self.Header, self.Main, { Smooth = true })
 
 	self.SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 		self:_ApplySearch(self.SearchBox.Text)
@@ -978,18 +1032,13 @@ function Window:_BuildCloseConfirm()
 		Parent = self.ConfirmBox,
 		Name = "AccentLine",
 		BackgroundColor3 = Theme.Colors.Accent,
-		BackgroundTransparency = 0.15,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Position = UDim2.new(0, 0, 0, 0),
 		Size = UDim2.new(1, 0, 0, 2),
+		Visible = false,
 		ZIndex = 202,
 	})
-	AddGradient(accentLine, {
-		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 1, 0),
-			NumberSequenceKeypoint.new(0.5, 0, 0),
-			NumberSequenceKeypoint.new(1, 1, 0),
-		})
 	})
 
 	local title = New("TextLabel", {
@@ -1049,7 +1098,7 @@ function Window:_BuildCloseConfirm()
 		BorderSizePixel = 0,
 		Font = Theme.Font,
 		Text = "Cancel",
-		TextSize = 13,
+		TextSize = 15,
 		TextColor3 = Theme.Colors.Text,
 		TextTransparency = 1,
 		AutoButtonColor = false,
@@ -1058,6 +1107,8 @@ function Window:_BuildCloseConfirm()
 	AddCorner(cancel, 4)
 
 	self.ConfirmObjects = { self.ConfirmBox, title, desc, yes, cancel }
+	CaptureFadeBase(self.ConfirmBox)
+	TweenFadeTree(self.ConfirmBox, false, TweenInfo.new(0, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
 
 	yes.MouseButton1Click:Connect(function()
 		self:_HideCloseConfirm()
@@ -1071,16 +1122,11 @@ end
 
 function Window:_ShowCloseConfirm()
 	self.ConfirmOverlay.Visible = true
-	Tween(self.ConfirmOverlay, Theme.Tween.Fast, { BackgroundTransparency = 0.45 })
-	Tween(self.ConfirmBox, Theme.Tween.Spring, { BackgroundTransparency = 0, Size = UDim2.new(0, 286, 0, 132) })
+	self.ConfirmBox.Size = UDim2.new(0, 270, 0, 122)
 
-	for _, object in ipairs(self.ConfirmObjects) do
-		if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
-			Tween(object, Theme.Tween.Fast, { TextTransparency = 0 })
-		elseif object:IsA("Frame") then
-			Tween(object, Theme.Tween.Fast, { BackgroundTransparency = object == self.ConfirmBox and 0 or object.BackgroundTransparency })
-		end
-	end
+	Tween(self.ConfirmOverlay, Theme.Tween.Fast, { BackgroundTransparency = 0.45 })
+	Tween(self.ConfirmBox, Theme.Tween.Spring, { Size = UDim2.new(0, 286, 0, 132) })
+	TweenFadeTree(self.ConfirmBox, true, Theme.Tween.Fast)
 end
 
 function Window:_HideCloseConfirm()
@@ -1088,25 +1134,11 @@ function Window:_HideCloseConfirm()
 
 	for _, object in ipairs(self.ConfirmObjects) do
 		if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
-			Tween(object, Theme.Tween.Fast, { TextTransparency = 1 })
-		elseif object:IsA("Frame") then
-			Tween(object, Theme.Tween.Fast, { BackgroundTransparency = 1 })
-		end
-	end
+			Tween(object, Theme.Tween.Fast, { TextTrfunction Window:_HideCloseConfirm()
+	Tween(self.ConfirmOverlay, Theme.Tween.Fast, { BackgroundTransparency = 1 })
+	TweenFadeTree(self.ConfirmBox, false, Theme.Tween.Fast)
 
-	task.delay(0.18, function()
-		if self.ConfirmOverlay then
-			self.ConfirmOverlay.Visible = false
-		end
-	end)
-end
-
---──────────────────────────────────────────────────--
--- Categories / Tabs / Sections
---──────────────────────────────────────────────────--
-
-function Window:CreateCategory(name)
-	local category = setmetatable({}, Category)
+	task.delay(0.18, function()ble({}, Category)
 	category.Window = self
 	category.Name = name or "Category"
 	category.Tabs = {}
@@ -1183,7 +1215,7 @@ function Category:CreateTab(name)
 		Text = tab.Name,
 		TextSize = 15,
 		TextColor3 = Theme.Colors.Text,
-		TextTransparency = 0.25,
+		TextTransparency = 0,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextStrokeTransparency = 1,
 		AutoButtonColor = false,
@@ -1258,7 +1290,7 @@ function Category:CreateTab(name)
 		if tab.Window.ActiveTab ~= tab then
 			Tween(tab.Button, Theme.Tween.Fast, {
 				TextColor3 = Theme.Colors.Text,
-				TextTransparency = 0.25,
+				TextTransparency = 0,
 			})
 		end
 	end)
@@ -1291,7 +1323,7 @@ function Window:SelectTab(name)
 			tab.Button.TextColor3 = Theme.Colors.Text
 			CreateAnimatedGradient(tab.Button, Color3.fromRGB(165, 121, 218), Color3.fromRGB(137, 69, 221))
 		else
-			tab.Button.TextTransparency = 0.25
+			tab.Button.TextTransparency = 0
 			tab.Button.TextColor3 = Theme.Colors.Text
 		end
 	end
@@ -1616,7 +1648,7 @@ function Section:CreateDropdown(config)
 		Text = "",
 		TextSize = 11,
 		TextColor3 = Color3.fromRGB(150, 150, 150),
-		TextXAlignment = Enum.TextXAlignment.Right,
+		TextXAlignment = Enum.TextXAlignment.Center,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		ZIndex = 3,
 	})
@@ -1625,8 +1657,8 @@ function Section:CreateDropdown(config)
 		Parent = holder,
 		Name = "DropdownList",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 14, 0, 31),
-		Size = UDim2.new(0, 235, 0, 0),
+		Position = UDim2.new(0, 10, 0, 31),
+		Size = UDim2.new(0, 245, 0, 0),
 		Visible = false,
 		ClipsDescendants = true,
 		ZIndex = 5,
@@ -1675,7 +1707,7 @@ function Section:CreateDropdown(config)
 				BackgroundColor3 = Color3.fromRGB(25, 25, 25),
 				BackgroundTransparency = 0.25,
 				BorderSizePixel = 0,
-				Size = UDim2.new(0, 235, 0, 24),
+				Size = UDim2.new(0, 245, 0, 24),
 				Font = Theme.Font,
 				Text = "   " .. optionText,
 				TextSize = 12,
@@ -1726,13 +1758,13 @@ function Section:CreateDropdown(config)
 		opened = true
 		listFrame.Visible = true
 		Tween(arrow, Theme.Tween.Fast, { Rotation = 90 })
-		Tween(listFrame, Theme.Tween.Smooth, { Size = UDim2.new(0, 235, 0, math.min(#options * 26, 156)) })
+		Tween(listFrame, Theme.Tween.Smooth, { Size = UDim2.new(0, 245, 0, math.min(#options * 26, 156)) })
 	end
 
 	function api:Close()
 		opened = false
 		Tween(arrow, Theme.Tween.Fast, { Rotation = 0 })
-		local closeTween = Tween(listFrame, Theme.Tween.Fast, { Size = UDim2.new(0, 235, 0, 0) })
+		local closeTween = Tween(listFrame, Theme.Tween.Fast, { Size = UDim2.new(0, 245, 0, 0) })
 		if closeTween then
 			closeTween.Completed:Once(function()
 				if not opened and listFrame then
@@ -1924,14 +1956,14 @@ function Section:CreateSlider(config)
 		Name = "ValueTextBox",
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Position = UDim2.new(0.795, 0, 0.225, 0),
-		Size = UDim2.new(0, 42, 0, 15),
+		Position = UDim2.new(0.835, 0, 0.225, 0),
+		Size = UDim2.new(0, 30, 0, 15),
 		Font = Theme.Font,
 		PlaceholderColor3 = Color3.fromRGB(178, 178, 178),
 		PlaceholderText = tostring(min),
 		Text = tostring(value),
 		TextSize = 10,
-		TextXAlignment = Enum.TextXAlignment.Right,
+		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = Theme.Colors.Text,
 		ClearTextOnFocus = false,
 		ZIndex = 3,
@@ -2359,7 +2391,7 @@ function Window:_BuildColorPicker()
 		Parent = picker,
 		Name = "ColorPickerMainSquare",
 		BackgroundColor3 = Color3.fromHSV(0, 1, 1),
-		Position = UDim2.new(0.036, 0, 0.201, 0),
+		Position = UDim2.new(0.036, 0, 0.255, 0),
 		Size = UDim2.new(0, 219, 0, 219),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
@@ -2422,7 +2454,7 @@ function Window:_BuildColorPicker()
 		Name = "CurrentColor",
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BorderSizePixel = 0,
-		Position = UDim2.new(0.426, 0, 0.329, 0),
+		Position = UDim2.new(0.426, 0, 0.385, 0),
 		Size = UDim2.new(0, 43, 0, 166),
 		ZIndex = 501,
 	})
@@ -2435,7 +2467,7 @@ function Window:_BuildColorPicker()
 		Parent = picker,
 		Name = "ColorSelector",
 		BackgroundColor3 = Color3.fromRGB(209, 209, 209),
-		Position = UDim2.new(0.526, 0, 0.199, 0),
+		Position = UDim2.new(0.526, 0, 0.255, 0),
 		Size = UDim2.new(0, 19, 0, 219),
 		BorderSizePixel = 0,
 		ZIndex = 501,
@@ -2476,7 +2508,7 @@ function Window:_BuildColorPicker()
 		Parent = recentFolder,
 		Name = "RecentText",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.587, 0, 0.12, 0),
+		Position = UDim2.new(0.587, 0, 0.175, 0),
 		Size = UDim2.new(0, 82, 0, 33),
 		Font = Theme.Font,
 		Text = "Recent:",
@@ -2487,11 +2519,11 @@ function Window:_BuildColorPicker()
 	})
 
 	local recentPositions = {
-		UDim2.new(0.589, 0, 0.201, 0),
-		UDim2.new(0.671, 0, 0.201, 0),
-		UDim2.new(0.753, 0, 0.201, 0),
-		UDim2.new(0.835, 0, 0.201, 0),
-		UDim2.new(0.917, 0, 0.201, 0),
+		UDim2.new(0.589, 0, 0.255, 0),
+		UDim2.new(0.671, 0, 0.255, 0),
+		UDim2.new(0.753, 0, 0.255, 0),
+		UDim2.new(0.835, 0, 0.255, 0),
+		UDim2.new(0.917, 0, 0.255, 0),
 	}
 
 	for index, position in ipairs(recentPositions) do
@@ -2543,10 +2575,10 @@ function Window:_BuildColorPicker()
 		return btn
 	end
 
-	local reset = iconButton("ResetToDefaultButton", Theme.Images.Reset, UDim2.new(0.426, 0, 0.201, 0))
-	local random = iconButton("RandomColorButton", Theme.Images.Random, UDim2.new(0.464, 0, 0.201, 0))
-	local back = iconButton("MoveBackButton", Theme.Images.Move, UDim2.new(0.426, 0, 0.261, 0), 180)
-	local forward = iconButton("MoveForwardButton", Theme.Images.Move, UDim2.new(0.464, 0, 0.261, 0))
+	local reset = iconButton("ResetToDefaultButton", Theme.Images.Reset, UDim2.new(0.426, 0, 0.255, 0))
+	local random = iconButton("RandomColorButton", Theme.Images.Random, UDim2.new(0.464, 0, 0.255, 0))
+	local back = iconButton("MoveBackButton", Theme.Images.Move, UDim2.new(0.426, 0, 0.315, 0), 180)
+	local forward = iconButton("MoveForwardButton", Theme.Images.Move, UDim2.new(0.464, 0, 0.315, 0))
 
 	reset.MouseButton1Click:Connect(function()
 		if self.ColorPickerState.Target then
@@ -2566,34 +2598,69 @@ function Window:_BuildColorPicker()
 		self:_MovePickerHistory(1)
 	end)
 
-	self.ColorRGBText = New("TextBox", {
+	local rgbRow = New("Frame", {
 		Parent = picker,
-		Name = "RGBTextBox",
+		Name = "RGBRow",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.587, 0, 0.332, 0),
-		Size = UDim2.new(0, 230, 0, 22),
-		Font = Theme.Font,
-		TextColor3 = Theme.Colors.TextDark,
-		PlaceholderColor3 = Theme.Colors.TextDark,
-		TextSize = 12,
-		Text = "RGB: 255, 255, 255",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		ClearTextOnFocus = false,
+		Position = UDim2.new(0.587, 0, 0.39, 0),
+		Size = UDim2.new(0, 245, 0, 24),
 		ZIndex = 501,
 	})
+	self.ColorRGBText = rgbRow
 
-	self.ColorRGBText.FocusLost:Connect(function()
-		local r, g, b = self.ColorRGBText.Text:match("(%d+)%D+(%d+)%D+(%d+)")
-		if r and g and b then
-			self:_SetPickerColor(Color3.fromRGB(
-				math.clamp(tonumber(r), 0, 255),
-				math.clamp(tonumber(g), 0, 255),
-				math.clamp(tonumber(b), 0, 255)
-			), true)
-		end
-	end)
+	local function makeRGBBox(labelText, x)
+		local label = New("TextLabel", {
+			Parent = rgbRow,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, x, 0, 0),
+			Size = UDim2.new(0, 18, 1, 0),
+			Font = Theme.Font,
+			Text = labelText .. ":",
+			TextColor3 = Theme.Colors.TextDark,
+			TextSize = 12,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 502,
+		})
 
-	MakeDraggable(header, picker)
+		local box = New("TextBox", {
+			Parent = rgbRow,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, x + 16, 0, 0),
+			Size = UDim2.new(0, 34, 1, 0),
+			Font = Theme.Font,
+			TextColor3 = Theme.Colors.TextDark,
+			PlaceholderColor3 = Theme.Colors.TextDark,
+			TextSize = 12,
+			Text = "255",
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ClearTextOnFocus = false,
+			ZIndex = 502,
+		})
+
+		return box, label
+	end
+
+	self.ColorRBox = makeRGBBox("R", 0)
+	self.ColorGBox = makeRGBBox("G", 72)
+	self.ColorBBox = makeRGBBox("B", 144)
+
+	local function applyRGBBoxes()
+		local r = math.clamp(tonumber(self.ColorRBox.Text) or 0, 0, 255)
+		local g = math.clamp(tonumber(self.ColorGBox.Text) or 0, 0, 255)
+		local b = math.clamp(tonumber(self.ColorBBox.Text) or 0, 0, 255)
+
+		self.ColorRBox.Text = tostring(math.floor(r + 0.5))
+		self.ColorGBox.Text = tostring(math.floor(g + 0.5))
+		self.ColorBBox.Text = tostring(math.floor(b + 0.5))
+
+		self:_SetPickerColor(Color3.fromRGB(r, g, b), true)
+	end
+
+	self.ColorRBox.FocusLost:Connect(applyRGBBoxes)
+	self.ColorGBox.FocusLost:Connect(applyRGBBoxes)
+	self.ColorBBox.FocusLost:Connect(applyRGBBoxes)
+
+	MakeDraggable(header, picker, { Smooth = true })
 
 	local draggingSquare = false
 	local draggingHue = false
@@ -2640,8 +2707,10 @@ function Window:_BuildColorPicker()
 
 	Services.UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			if draggingSquare or draggingHue then
-				self:_PushPickerHistory(self:_GetPickerColor())
+				if draggingSquare or draggingHue then
+				local pickedColor = self:_GetPickerColor()
+				self:_PushPickerHistory(pickedColor)
+				self:_AddRecentColor(pickedColor)
 			end
 			draggingSquare = false
 			draggingHue = false
@@ -2711,15 +2780,25 @@ function Window:_RenderPicker(sendCallback)
 	local state = self.ColorPickerState
 	local color = self:_GetPickerColor()
 
-	self.ColorSquare.BackgroundColor3 = Color3.fromHSV(state.Hue, 1, 1)
-	self.ColorSquareDot.Position = UDim2.new(state.Saturation, 0, 1 - state.Value, 0)
-	self.HueLine.Position = UDim2.new(0, 0, state.Hue, 0)
-	self.ColorCurrent.BackgroundColor3 = color
+	Tween(self.ColorSquare, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundColor3 = Color3.fromHSV(state.Hue, 1, 1),
+	})
+	Tween(self.ColorSquareDot, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Position = UDim2.new(state.Saturation, 0, 1 - state.Value, 0),
+	})
+	Tween(self.HueLine, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0, 0, state.Hue, 0),
+	})
+	Tween(self.ColorCurrent, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundColor3 = color,
+	})
 
 	local r = math.floor(color.R * 255 + 0.5)
 	local g = math.floor(color.G * 255 + 0.5)
 	local b = math.floor(color.B * 255 + 0.5)
-	self.ColorRGBText.Text = string.format("RGB: %d, %d, %d", r, g, b)
+	self.ColorRBox.Text = tostring(r)
+	self.ColorGBox.Text = tostring(g)
+	self.ColorBBox.Text = tostring(b)
 
 	if sendCallback and state.Target and state.Target.Set then
 		state.Target.Set(color)
@@ -2739,6 +2818,7 @@ function Window:_SetPickerColor(color, pushHistory)
 
 	if pushHistory then
 		self:_PushPickerHistory(color)
+		self:_AddRecentColor(color)
 	end
 end
 
@@ -2794,7 +2874,7 @@ function Window:_ReflowNotifications()
 		local data = self.NotificationStack[i]
 		if data and data.Frame and data.Frame.Parent and not data.Manual then
 			Tween(data.Frame, Theme.Tween.Smooth, {
-				Position = UDim2.new(1, -20, 1, -20 - (index * 91))
+				Position = UDim2.new(1, -20, 1, -20 - (index
 			})
 			index += 1
 		end
@@ -2811,7 +2891,7 @@ function Window:_CreateNotificationUI(config)
 		Position = UDim2.new(1, 300, 1, -20),
 		BackgroundColor3 = Theme.Colors.Header,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0, 310, 0, 82),
+		Size = UDim2.new(0, 285, 0, 72),
 		ZIndex = 1001,
 		BorderSizePixel = 0,
 	})
@@ -2830,7 +2910,7 @@ function Window:_CreateNotificationUI(config)
 		Parent = ui.Frame,
 		Name = "DragLine",
 		Position = UDim2.new(0.022, 0, 0.16, 0),
-		Size = UDim2.new(0, 5, 0, 56),
+		Size = UDim2.new(0, 5, 0, 49),
 		ZIndex = 1003,
 		BackgroundColor3 = Theme.Colors.Text,
 		BackgroundTransparency = 1,
@@ -2851,8 +2931,8 @@ function Window:_CreateNotificationUI(config)
 		Name = "TimeLineGlow",
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, 0.735, 0),
-		Size = UDim2.new(1, 0, 0, 20),
+		Position = UDim2.new(0, 0, 0.72, 0),
+		Size = UDim2.new(1, 0, 0, 18),
 		BorderSizePixel = 0,
 		ZIndex = 1002,
 	})
@@ -2886,8 +2966,8 @@ function Window:_CreateNotificationUI(config)
 		Parent = ui.Frame,
 		Name = "CloseButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.915, 0, 0.035, 0),
-		Size = UDim2.new(0, 24, 0, 24),
+		Position = UDim2.new(0.905, 0, 0.02, 0),
+		Size = UDim2.new(0, 23, 0, 23),
 		ImageTransparency = 1,
 		Image = Theme.Images.Close,
 		AutoButtonColor = false,
@@ -2898,8 +2978,8 @@ function Window:_CreateNotificationUI(config)
 		Parent = ui.Frame,
 		Name = "FreezeButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.84, 0, 0.035, 0),
-		Size = UDim2.new(0, 24, 0, 24),
+		Position = UDim2.new(0.825, 0, 0.02, 0),
+		Size = UDim2.new(0, 23, 0, 23),
 		ImageTransparency = 1,
 		AutoButtonColor = false,
 		ZIndex = 1004,
@@ -2921,15 +3001,15 @@ function Window:_CreateNotificationUI(config)
 		Parent = ui.Frame,
 		Name = "TimeLeft",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.83, 0, 0.63, 0),
-		Size = UDim2.new(0, 46, 0, 22),
+		Position = UDim2.new(0.818, 0, 0.64, 0),
+		Size = UDim2.new(0, 44, 0, 20),
 		ZIndex = 1004,
 		Text = tostring(config.Duration or 3) .. "s",
 		Font = Theme.Font,
 		TextColor3 = Color3.fromRGB(80, 80, 80),
 		TextTransparency = 1,
 		TextSize = 10,
-		TextXAlignment = Enum.TextXAlignment.Right,
+		TextXAlignment = Enum.TextXAlignment.Center,
 	})
 
 	ui.Title = New("TextLabel", {
@@ -2937,8 +3017,8 @@ function Window:_CreateNotificationUI(config)
 		Name = "NotificationName",
 		BackgroundTransparency = 1,
 		ZIndex = 1004,
-		Position = UDim2.new(0.072, 0, 0.075, 0),
-		Size = UDim2.new(0, 210, 0, 21),
+		Position = UDim2.new(0.075, 0, 0.08, 0),
+		Size = UDim2.new(0, 195, 0, 20),
 		Font = Theme.Font,
 		Text = config.Title or "Notification",
 		TextSize = 13,
@@ -2955,13 +3035,13 @@ function Window:_CreateNotificationUI(config)
 		Name = "NotificationDescription",
 		BackgroundTransparency = 1,
 		ZIndex = 1004,
-		Position = UDim2.new(0.072, 0, 0.33, 0),
-		Size = UDim2.new(0, 230, 0, 38),
+		Position = UDim2.new(0.075, 0, 0.39, 0),
+		Size = UDim2.new(0, 205, 0, 31),
 		Font = Theme.Font,
 		Text = config.Description or "",
 		TextColor3 = Color3.fromRGB(155, 155, 155),
 		TextTransparency = 1,
-		TextSize = 11,
+		TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextWrapped = true,
