@@ -231,11 +231,31 @@ local function SetTreeTransparency(root, alpha)
 	end
 end
 
-local function MakeDraggable(handle, target)
+local function MakeDraggable(handle, target, options)
+	options = options or {}
+
 	local dragging = false
 	local dragStart = nil
 	local startPosition = nil
 	local connection = nil
+	local activeTween = nil
+
+	local function setPosition(position)
+		if options.Smooth then
+			if activeTween then
+				activeTween:Cancel()
+			end
+
+			activeTween = Services.TweenService:Create(
+				target,
+				TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ Position = position }
+			)
+			activeTween:Play()
+		else
+			target.Position = position
+		end
+	end
 
 	handle.InputBegan:Connect(function(input)
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
@@ -260,12 +280,12 @@ local function MakeDraggable(handle, target)
 			end
 
 			local delta = moveInput.Position - dragStart
-			target.Position = UDim2.new(
+			setPosition(UDim2.new(
 				startPosition.X.Scale,
 				startPosition.X.Offset + delta.X,
 				startPosition.Y.Scale,
 				startPosition.Y.Offset + delta.Y
-			)
+			))
 		end)
 
 		input.Changed:Connect(function()
@@ -373,6 +393,7 @@ function Amphibia.CreateWindow(config)
 	self.Categories = {}
 	self.Tabs = {}
 	self.Searchables = {}
+	self.NotificationStack = {}
 	self.ActiveTab = nil
 	self.Destroyed = false
 	self.Visible = true
@@ -510,26 +531,28 @@ function Amphibia.CreateWindow(config)
 	})
 
 	self.TitleShadow = New("TextLabel", {
-		Parent = self.Title,
+		Parent = self.HeaderFolder,
 		Name = "TextShadow",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, -0.1, 0),
-		Size = UDim2.new(1, 0, 1.35, 0),
+		Position = UDim2.new(0.05, 1, 0.024, 1),
+		Size = UDim2.new(0, 145, 0, 34),
 		ZIndex = 4,
 		Font = Theme.Font,
 		Text = self.Name,
 		TextSize = 20,
 		TextColor3 = Color3.fromRGB(0, 0, 0),
+		TextTransparency = 0.08,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 
 	AddGradient(self.TitleShadow, {
 		Rotation = -90,
 		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0, 0),
-			NumberSequenceKeypoint.new(0.5, 0.369, 0),
-			NumberSequenceKeypoint.new(1, 0, 0),
+			NumberSequenceKeypoint.new(0, 0.18, 0),
+			NumberSequenceKeypoint.new(0.5, 0.45, 0),
+			NumberSequenceKeypoint.new(1, 0.18, 0),
 		})
+	})
 	})
 
 	self.SearchFrame = New("Frame", {
@@ -764,13 +787,90 @@ function Window:_RegisterSearchable(data)
 end
 
 function Window:_ApplySearch(query)
-	query = string.lower(tostring(query or ""))
+	local rawQuery = tostring(query or "")
+	local normalizedQuery = string.lower(rawQuery):gsub("^%s+", ""):gsub("%s+$", "")
+
+	local function normalize(text)
+		return string.lower(tostring(text or "")):gsub("[_%-%.]", " "):gsub("%s+", " ")
+	end
+
+	local function splitTokens(text)
+		local tokens = {}
+		for token in normalize(text):gmatch("%S+") do
+			table.insert(tokens, token)
+		end
+		return tokens
+	end
+
+	local function isSubsequence(needle, haystack)
+		needle = normalize(needle):gsub("%s+", "")
+		haystack = normalize(haystack):gsub("%s+", "")
+
+		if needle == "" then
+			return true
+		end
+
+		local index = 1
+		for i = 1, #haystack do
+			if haystack:sub(i, i) == needle:sub(index, index) then
+				index += 1
+				if index > #needle then
+					return true
+				end
+			end
+		end
+
+		return false
+	end
+
+	local function score(data)
+		local name = normalize(data.Name)
+		local sectionName = data.Section and normalize(data.Section.Name) or ""
+		local tabName = data.Tab and normalize(data.Tab.Name) or ""
+		local full = table.concat({ name, sectionName, tabName }, " ")
+
+		if normalizedQuery == "" then
+			return 1
+		end
+
+		if name == normalizedQuery then
+			return 100
+		end
+
+		if name:find(normalizedQuery, 1, true) then
+			return 80
+		end
+
+		if full:find(normalizedQuery, 1, true) then
+			return 60
+		end
+
+		local tokens = splitTokens(normalizedQuery)
+		local matchedTokens = 0
+
+		for _, token in ipairs(tokens) do
+			if full:find(token, 1, true) or isSubsequence(token, full) then
+				matchedTokens += 1
+			end
+		end
+
+		if #tokens > 0 and matchedTokens == #tokens then
+			return 40 + matchedTokens
+		end
+
+		if isSubsequence(normalizedQuery, name) then
+			return 25
+		end
+
+		return 0
+	end
 
 	for _, tab in pairs(self.Tabs) do
 		tab.SearchMatchCount = 0
+		tab.SearchScore = 0
 	end
 
-	if query == "" then
+	if normalizedQuery == "" then
 		for _, data in ipairs(self.Searchables) do
 			if data.Object and data.Object.Parent then
 				data.Object.Visible = true
@@ -790,10 +890,12 @@ function Window:_ApplySearch(query)
 		return
 	end
 
-	local firstMatchedTab = nil
+	local bestTab = nil
+	local bestScore = 0
 
 	for _, data in ipairs(self.Searchables) do
-		local matched = string.find(string.lower(data.Name), query, 1, true) ~= nil
+		local itemScore = score(data)
+		local matched = itemScore > 0
 
 		if data.Object and data.Object.Parent then
 			data.Object.Visible = matched
@@ -801,25 +903,37 @@ function Window:_ApplySearch(query)
 
 		if matched and data.Tab then
 			data.Tab.SearchMatchCount = (data.Tab.SearchMatchCount or 0) + 1
-			firstMatchedTab = firstMatchedTab or data.Tab
+			data.Tab.SearchScore = math.max(data.Tab.SearchScore or 0, itemScore)
+
+			if itemScore > bestScore then
+				bestScore = itemScore
+				bestTab = data.Tab
+			end
 		end
 	end
 
 	for _, tab in pairs(self.Tabs) do
 		for _, section in ipairs(tab.Sections) do
-			local hasVisible = false
+			local sectionMatched = score({
+				Name = section.Name,
+				Section = section,
+				Tab = tab,
+			}) > 0
+
+			local hasVisible = sectionMatched
 			for _, child in ipairs(section.Holder:GetChildren()) do
 				if child:IsA("GuiObject") and child.Visible then
 					hasVisible = true
 					break
 				end
 			end
+
 			section.Frame.Visible = hasVisible
 		end
 	end
 
-	if firstMatchedTab and self.ActiveTab ~= firstMatchedTab then
-		self:SelectTab(firstMatchedTab.Name)
+	if bestTab and self.ActiveTab ~= bestTab then
+		self:SelectTab(bestTab.Name)
 	end
 end
 
@@ -840,15 +954,41 @@ function Window:_BuildCloseConfirm()
 		Name = "ConfirmBox",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
-		Size = UDim2.new(0, 260, 0, 120),
-		BackgroundColor3 = Theme.Colors.Header,
+		Size = UDim2.new(0, 286, 0, 132),
+		BackgroundColor3 = Theme.Colors.Background,
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ZIndex = 201,
 	})
 
 	AddCorner(self.ConfirmBox, 4)
-	AddStroke(self.ConfirmBox, Theme.Colors.Accent, 1, 1, 202)
+	AddGradient(self.ConfirmBox, {
+		Rotation = -90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+		})
+	})
+	AddStroke(self.ConfirmBox, Color3.fromRGB(47, 47, 47), 2, 0, 1)
+	AddStroke(self.ConfirmBox, Color3.fromRGB(0, 0, 0), 1, 0.18, 2)
+
+	local accentLine = New("Frame", {
+		Parent = self.ConfirmBox,
+		Name = "AccentLine",
+		BackgroundColor3 = Theme.Colors.Accent,
+		BackgroundTransparency = 0.15,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 0, 0, 0),
+		Size = UDim2.new(1, 0, 0, 2),
+		ZIndex = 202,
+	})
+	AddGradient(accentLine, {
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1, 0),
+			NumberSequenceKeypoint.new(0.5, 0, 0),
+			NumberSequenceKeypoint.new(1, 1, 0),
+		})
+	})
 
 	local title = New("TextLabel", {
 		Parent = self.ConfirmBox,
@@ -930,13 +1070,13 @@ end
 function Window:_ShowCloseConfirm()
 	self.ConfirmOverlay.Visible = true
 	Tween(self.ConfirmOverlay, Theme.Tween.Fast, { BackgroundTransparency = 0.45 })
-	Tween(self.ConfirmBox, Theme.Tween.Spring, { BackgroundTransparency = 0, Size = UDim2.new(0, 260, 0, 120) })
+	Tween(self.ConfirmBox, Theme.Tween.Spring, { BackgroundTransparency = 0, Size = UDim2.new(0, 286, 0, 132) })
 
 	for _, object in ipairs(self.ConfirmObjects) do
 		if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
 			Tween(object, Theme.Tween.Fast, { TextTransparency = 0 })
 		elseif object:IsA("Frame") then
-			Tween(object, Theme.Tween.Fast, { BackgroundTransparency = 0 })
+			Tween(object, Theme.Tween.Fast, { BackgroundTransparency = object == self.ConfirmBox and 0 or object.BackgroundTransparency })
 		end
 	end
 end
@@ -1305,12 +1445,6 @@ function Section:CreateButton(config)
 	}, "Button")
 
 	hitbox.MouseButton1Click:Connect(function()
-		Tween(nameText, Theme.Tween.Fast, { TextColor3 = Theme.Colors.Accent })
-		task.delay(0.12, function()
-			if nameText and nameText.Parent then
-				Tween(nameText, Theme.Tween.Fast, { TextColor3 = Theme.Colors.Text })
-			end
-		end)
 		SafeCallback(config.Callback)
 	end)
 
@@ -1370,7 +1504,7 @@ function Section:CreateToggle(config)
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		Size = UDim2.new(0, 0, 0, 0),
 		ZIndex = 4,
-		Visible = true,
+		Visible = false,
 	})
 
 	AddCorner(active, 1)
@@ -1387,10 +1521,20 @@ function Section:CreateToggle(config)
 
 	local function render(skipCallback)
 		if state then
+			active.Visible = true
 			Tween(active, Theme.Tween.Spring, { Size = UDim2.new(0, 14, 0, 14) })
 			Tween(nameText, Theme.Tween.Fast, { TextColor3 = Color3.fromRGB(153, 70, 255) })
 		else
-			Tween(active, Theme.Tween.Fast, { Size = UDim2.new(0, 0, 0, 0) })
+			local hideTween = Tween(active, Theme.Tween.Fast, { Size = UDim2.new(0, 0, 0, 0) })
+			if hideTween then
+				hideTween.Completed:Once(function()
+					if not state and active then
+						active.Visible = false
+					end
+				end)
+			else
+				active.Visible = false
+			end
 			Tween(nameText, Theme.Tween.Fast, { TextColor3 = Theme.Colors.Text })
 		end
 
@@ -1479,8 +1623,8 @@ function Section:CreateDropdown(config)
 		Parent = holder,
 		Name = "DropdownList",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, 0, 29),
-		Size = UDim2.new(0, 265, 0, 0),
+		Position = UDim2.new(0, 14, 0, 31),
+		Size = UDim2.new(0, 235, 0, 0),
 		Visible = false,
 		ClipsDescendants = true,
 		ZIndex = 5,
@@ -1529,9 +1673,9 @@ function Section:CreateDropdown(config)
 				BackgroundColor3 = Color3.fromRGB(25, 25, 25),
 				BackgroundTransparency = 0.25,
 				BorderSizePixel = 0,
-				Size = UDim2.new(0, 265, 0, 24),
+				Size = UDim2.new(0, 235, 0, 24),
 				Font = Theme.Font,
-				Text = "  " .. optionText,
+				Text = "   " .. optionText,
 				TextSize = 12,
 				TextColor3 = Theme.Colors.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
@@ -1539,6 +1683,20 @@ function Section:CreateDropdown(config)
 				ZIndex = 6,
 			})
 			AddCorner(optionButton, 3)
+			AddStroke(optionButton, Color3.fromRGB(32, 32, 32), 1, 0.25, 1)
+
+			local optionAccent = New("Frame", {
+				Parent = optionButton,
+				Name = "Accent",
+				BackgroundColor3 = Theme.Colors.Accent,
+				BackgroundTransparency = 0.15,
+				BorderSizePixel = 0,
+				Position = UDim2.new(0, 0, 0.18, 0),
+				Size = UDim2.new(0, 2, 0.64, 0),
+				Visible = false,
+				ZIndex = 7,
+			})
+			AddCorner(optionAccent, 99)
 
 			optionButton.MouseEnter:Connect(function()
 				Tween(optionButton, Theme.Tween.Fast, { BackgroundTransparency = 0.05 })
@@ -1566,13 +1724,13 @@ function Section:CreateDropdown(config)
 		opened = true
 		listFrame.Visible = true
 		Tween(arrow, Theme.Tween.Fast, { Rotation = 90 })
-		Tween(listFrame, Theme.Tween.Smooth, { Size = UDim2.new(0, 265, 0, math.min(#options * 26, 156)) })
+		Tween(listFrame, Theme.Tween.Smooth, { Size = UDim2.new(0, 235, 0, math.min(#options * 26, 156)) })
 	end
 
 	function api:Close()
 		opened = false
 		Tween(arrow, Theme.Tween.Fast, { Rotation = 0 })
-		local closeTween = Tween(listFrame, Theme.Tween.Fast, { Size = UDim2.new(0, 265, 0, 0) })
+		local closeTween = Tween(listFrame, Theme.Tween.Fast, { Size = UDim2.new(0, 235, 0, 0) })
 		if closeTween then
 			closeTween.Completed:Once(function()
 				if not opened and listFrame then
@@ -1714,7 +1872,7 @@ function Section:CreateSlider(config)
 		BackgroundColor3 = Theme.Colors.Text,
 		BorderSizePixel = 0,
 		Position = UDim2.new(0.209, 0, 0.431, 0),
-		Size = UDim2.new(0, 181, 0, 3),
+		Size = UDim2.new(0, 152, 0, 3),
 		ZIndex = 3,
 	})
 
@@ -1764,8 +1922,8 @@ function Section:CreateSlider(config)
 		Name = "ValueTextBox",
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Position = UDim2.new(0.89, 0, 0.225, 0),
-		Size = UDim2.new(0, 34, 0, 15),
+		Position = UDim2.new(0.795, 0, 0.225, 0),
+		Size = UDim2.new(0, 42, 0, 15),
 		Font = Theme.Font,
 		PlaceholderColor3 = Color3.fromRGB(178, 178, 178),
 		PlaceholderText = tostring(min),
@@ -1942,7 +2100,7 @@ function Section:CreateKeybind(config)
 	hitbox.MouseButton1Click:Connect(function()
 		listening = true
 		keyText.Text = "..."
-		Tween(keyFrame, Theme.Tween.Fast, { BackgroundColor3 = Theme.Colors.Accent })
+		Tween(keyFrame, Theme.Tween.Fast, { BackgroundColor3 = Color3.fromRGB(165, 165, 165) })
 	end)
 
 	Services.UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -2027,7 +2185,7 @@ function Section:CreateColorPicker(config)
 	end
 
 	function api:Open()
-		self.Window:_OpenColorPicker({
+		api.Window:_OpenColorPicker({
 			Name = config.Name or "ColorPicker",
 			Default = defaultColor,
 			Color = currentColor,
@@ -2044,6 +2202,7 @@ function Section:CreateColorPicker(config)
 	api.Instance = holder
 	api.Button = hitbox
 	api.Preview = preview
+	api.Window = self.Window
 
 	hitbox.MouseButton1Click:Connect(function()
 		api:Open()
@@ -2610,6 +2769,28 @@ end
 -- Notifications
 --──────────────────────────────────────────────────--
 
+function Window:_ReflowNotifications()
+	local index = 0
+
+	for i = #self.NotificationStack, 1, -1 do
+		local data = self.NotificationStack[i]
+		if not data.Frame or not data.Frame.Parent then
+			table.remove(self.NotificationStack, i)
+		end
+	end
+
+	for i = #self.NotificationStack, 1, -1 do
+		local data = self.NotificationStack[i]
+		if data and data.Frame and data.Frame.Parent and not data.Manual then
+			local yOffset = -20 - (index * 73)
+			Tween(data.Frame, Theme.Tween.Smooth, {
+				Position = UDim2.new(1, -20, 1, yOffset),
+			})
+			index += 1
+		end
+	end
+end
+
 function Window:Notify(config)
 	if typeof(config) == "string" then
 		config = { Title = config }
@@ -2621,8 +2802,10 @@ function Window:Notify(config)
 	local closed = false
 
 	local frame = New("Frame", {
-		Parent = self.NotificationHolder,
+		Parent = self.Gui,
 		Name = "NotificationBackground",
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, 300, 1, -20),
 		BackgroundColor3 = Theme.Colors.Header,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 253, 0, 65),
@@ -2646,7 +2829,7 @@ function Window:Notify(config)
 		Name = "DragLine",
 		Position = UDim2.new(0.024, 0, 0.169, 0),
 		Size = UDim2.new(0, 5, 0, 43),
-		ZIndex = 1002,
+		ZIndex = 1003,
 		BackgroundColor3 = Theme.Colors.Text,
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
@@ -2661,39 +2844,63 @@ function Window:Notify(config)
 	})
 	AddStroke(dragLine, Color3.fromRGB(0, 0, 0), 1, 1, 1)
 
+	local timelineGlow = New("Frame", {
+		Parent = frame,
+		Name = "TimeLineGlow",
+		BackgroundColor3 = Theme.Colors.Accent,
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 0, 0.72, 0),
+		Size = UDim2.new(1, 0, 0, 17),
+		BorderSizePixel = 0,
+		ZIndex = 1002,
+	})
+	AddGradient(timelineGlow, {
+		Rotation = 90,
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1, 0),
+			NumberSequenceKeypoint.new(1, 0.86, 0),
+		})
+	})
+
 	local timeline = New("Frame", {
 		Parent = frame,
 		Name = "TimeLine",
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0, 0, 0.975, 0),
-		Size = UDim2.new(0, 253, 0, 2),
-		ZIndex = 1002,
+		Size = UDim2.new(1, 0, 0, 2),
+		ZIndex = 1003,
 		BorderSizePixel = 0,
 	})
 	AddCorner(timeline, 80)
+	AddGradient(timeline, {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(137, 98, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+		})
+	})
 
 	local close = New("ImageButton", {
 		Parent = frame,
 		Name = "CloseButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.91, 0, 0, 0),
-		Size = UDim2.new(0, 22, 0, 22),
+		Position = UDim2.new(0.91, 0, 0.045, 0),
+		Size = UDim2.new(0, 20, 0, 20),
 		ImageTransparency = 1,
 		Image = Theme.Images.Close,
 		AutoButtonColor = false,
-		ZIndex = 1003,
+		ZIndex = 1004,
 	})
 
 	local freeze = New("ImageButton", {
 		Parent = frame,
 		Name = "FreezeButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.822, 0, 0, 0),
-		Size = UDim2.new(0, 22, 0, 22),
+		Position = UDim2.new(0.825, 0, 0.045, 0),
+		Size = UDim2.new(0, 20, 0, 20),
 		ImageTransparency = 1,
 		AutoButtonColor = false,
-		ZIndex = 1003,
+		ZIndex = 1004,
 	})
 
 	local freezeIcon = New("ImageLabel", {
@@ -2705,21 +2912,21 @@ function Window:Notify(config)
 		ImageTransparency = 1,
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		ZIndex = 1004,
+		ZIndex = 1005,
 	})
 
 	local timeLeft = New("TextLabel", {
 		Parent = frame,
 		Name = "TimeLeft",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.834, 0, 0.646, 0),
-		Size = UDim2.new(0, 35, 0, 23),
-		ZIndex = 1002,
+		Position = UDim2.new(0.835, 0, 0.645, 0),
+		Size = UDim2.new(0, 35, 0, 20),
+		ZIndex = 1004,
 		Text = tostring(duration) .. "s",
 		Font = Theme.Font,
-		TextColor3 = Color3.fromRGB(63, 63, 63),
+		TextColor3 = Color3.fromRGB(80, 80, 80),
 		TextTransparency = 1,
-		TextSize = 11,
+		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Right,
 	})
 
@@ -2727,12 +2934,12 @@ function Window:Notify(config)
 		Parent = frame,
 		Name = "NotificationName",
 		BackgroundTransparency = 1,
-		ZIndex = 1002,
-		Position = UDim2.new(0.075, 0, 0.031, 0),
-		Size = UDim2.new(0, 170, 0, 23),
+		ZIndex = 1004,
+		Position = UDim2.new(0.075, 0, 0.08, 0),
+		Size = UDim2.new(0, 172, 0, 18),
 		Font = Theme.Font,
 		Text = config.Title or "Notification",
-		TextSize = 14,
+		TextSize = 13,
 		TextColor3 = Theme.Colors.Text,
 		TextTransparency = 1,
 		TextStrokeTransparency = 0.42,
@@ -2745,18 +2952,31 @@ function Window:Notify(config)
 		Parent = frame,
 		Name = "NotificationDescription",
 		BackgroundTransparency = 1,
-		ZIndex = 1002,
-		Position = UDim2.new(0.075, 0, 0.262, 0),
-		Size = UDim2.new(0, 182, 0, 37),
+		ZIndex = 1004,
+		Position = UDim2.new(0.075, 0, 0.36, 0),
+		Size = UDim2.new(0, 182, 0, 28),
 		Font = Theme.Font,
 		Text = config.Description or "",
-		TextColor3 = Color3.fromRGB(161, 161, 161),
+		TextColor3 = Color3.fromRGB(155, 155, 155),
 		TextTransparency = 1,
-		TextSize = 12,
+		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextWrapped = true,
 	})
+
+	local notificationData = {
+		Frame = frame,
+		Manual = false,
+	}
+	table.insert(self.NotificationStack, notificationData)
+
+	MakeDraggable(dragLine, frame, { Smooth = true })
+	dragLine.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			notificationData.Manual = true
+		end
+	end)
 
 	local function closeNotification()
 		if closed then
@@ -2764,8 +2984,16 @@ function Window:Notify(config)
 		end
 		closed = true
 
-		Tween(frame, Theme.Tween.Fast, { BackgroundTransparency = 1 })
+		for i = #self.NotificationStack, 1, -1 do
+			if self.NotificationStack[i] == notificationData then
+				table.remove(self.NotificationStack, i)
+				break
+			end
+		end
+
+		Tween(frame, Theme.Tween.Fast, { BackgroundTransparency = 1, Position = frame.Position + UDim2.new(0, 35, 0, 0) })
 		Tween(dragLine, Theme.Tween.Fast, { BackgroundTransparency = 1 })
+		Tween(timelineGlow, Theme.Tween.Fast, { BackgroundTransparency = 1 })
 		Tween(timeline, Theme.Tween.Fast, { BackgroundTransparency = 1 })
 		Tween(close, Theme.Tween.Fast, { ImageTransparency = 1 })
 		Tween(freezeIcon, Theme.Tween.Fast, { ImageTransparency = 1 })
@@ -2773,10 +3001,11 @@ function Window:Notify(config)
 		Tween(title, Theme.Tween.Fast, { TextTransparency = 1 })
 		Tween(desc, Theme.Tween.Fast, { TextTransparency = 1 })
 
-		task.delay(0.2, function()
+		task.delay(0.22, function()
 			if frame then
 				frame:Destroy()
 			end
+			self:_ReflowNotifications()
 		end)
 	end
 
@@ -2784,13 +3013,32 @@ function Window:Notify(config)
 	freeze.MouseButton1Click:Connect(function()
 		frozen = not frozen
 		Tween(freezeIcon, Theme.Tween.Fast, {
-			ImageTransparency = frozen and 0.25 or 0.84,
+			ImageTransparency = frozen and 0.22 or 0.84,
 		})
 	end)
 
-	frame.BackgroundTransparency = 1
-	Tween(frame, Theme.Tween.Fast, { BackgroundTransparency = 0 })
+	close.MouseEnter:Connect(function()
+		Tween(close, Theme.Tween.Fast, { ImageTransparency = 0.35 })
+	end)
+	close.MouseLeave:Connect(function()
+		Tween(close, Theme.Tween.Fast, { ImageTransparency = 0.84 })
+	end)
+
+	freeze.MouseEnter:Connect(function()
+		Tween(freezeIcon, Theme.Tween.Fast, { ImageTransparency = frozen and 0.22 or 0.55 })
+	end)
+	freeze.MouseLeave:Connect(function()
+		Tween(freezeIcon, Theme.Tween.Fast, { ImageTransparency = frozen and 0.22 or 0.84 })
+	end)
+
+	self:_ReflowNotifications()
+
+	Tween(frame, Theme.Tween.Spring, {
+		BackgroundTransparency = 0,
+		Position = UDim2.new(1, -20, 1, -20),
+	})
 	Tween(dragLine, Theme.Tween.Fast, { BackgroundTransparency = 0 })
+	Tween(timelineGlow, Theme.Tween.Fast, { BackgroundTransparency = 0.3 })
 	Tween(timeline, Theme.Tween.Fast, { BackgroundTransparency = 0.45 })
 	Tween(close, Theme.Tween.Fast, { ImageTransparency = 0.84 })
 	Tween(freezeIcon, Theme.Tween.Fast, { ImageTransparency = 0.84 })
@@ -2835,4 +3083,5 @@ Amphibia.Tween = Tween
 Amphibia.AddCorner = AddCorner
 Amphibia.AddStroke = AddStroke
 Amphibia.AddGradient = AddGradient
+
 return Amphibia
