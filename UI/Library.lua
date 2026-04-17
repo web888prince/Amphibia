@@ -557,7 +557,6 @@ function Amphibia.CreateWindow(config)
 			NumberSequenceKeypoint.new(1, 0.18, 0),
 		})
 	})
-	})
 
 	self.SearchFrame = New("Frame", {
 		Parent = self.Main,
