@@ -4,7 +4,7 @@
 
 local Amphibia = {}
 Amphibia.__index = Amphibia
-Amphibia.Version = "1.0.2-visual-1to1-fix"
+Amphibia.Version = "1.0.3-layout-offset-fix"
 
 --──────────────────────────────────────────────────--
 -- Services
@@ -488,8 +488,8 @@ function Amphibia.CreateWindow(config)
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 0.25,
 		ZIndex = 5,
-		Position = UDim2.new(0, 0, 0.1, 0),
-		Size = UDim2.new(1, 0, 0, 17),
+		Position = UDim2.new(0, 0, 0, 48),
+		Size = UDim2.new(0, 767, 0, 17),
 	})
 
 	AddGradient(self.HeaderGlow, {
@@ -634,7 +634,7 @@ function Amphibia.CreateWindow(config)
 	self.TabsBg = New("Frame", {
 		Parent = self.Main,
 		Name = "TabsBg",
-		Position = UDim2.new(0, 0, 0.097, 0),
+		Position = UDim2.new(0, 0, 0, 48),
 		Size = UDim2.new(0, 185, 0, 436),
 		BackgroundColor3 = Color3.fromRGB(0, 0, 0),
 		BorderSizePixel = 0,
@@ -670,8 +670,8 @@ function Amphibia.CreateWindow(config)
 		BorderSizePixel = 0,
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 0.2,
-		Position = UDim2.new(0, 0, 0.102, 0),
-		Size = UDim2.new(0, 185, 0, -1),
+		Position = UDim2.new(0, 0, 0, 48),
+		Size = UDim2.new(0, 185, 0, 1),
 		ZIndex = 4,
 	})
 
@@ -685,7 +685,7 @@ function Amphibia.CreateWindow(config)
 	self.TabsSplitter = New("Frame", {
 		Parent = self.Main,
 		Name = "TabsSplitter",
-		Position = UDim2.new(0.24, 0, 0.101, 0),
+		Position = UDim2.new(0, 185, 0, 48),
 		Size = UDim2.new(0, 1, 0, 434),
 		BackgroundColor3 = Color3.fromRGB(85, 85, 85),
 		BorderSizePixel = 0,
@@ -1193,8 +1193,8 @@ function Category:CreateTab(name)
 		Parent = self.Window.TabsContentFolder,
 		Name = tab.Name .. "TabContent",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.241, 0, 0.101, 0),
-		Size = UDim2.new(0, 581, 0, 435),
+		Position = UDim2.new(0, 185, 0, 48),
+		Size = UDim2.new(0, 582, 0, 436),
 		ZIndex = 1,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -2288,8 +2288,8 @@ function Window:_BuildColorPicker()
 		BackgroundColor3 = Theme.Colors.Accent,
 		BackgroundTransparency = 0.5,
 		ZIndex = 505,
-		Position = UDim2.new(0, 0, 0.119, 0),
-		Size = UDim2.new(1, 0, 0, 17),
+		Position = UDim2.new(0, 0, 0, 50),
+		Size = UDim2.new(0, 608, 0, 17),
 	})
 	AddGradient(glow, {
 		Rotation = 90,
