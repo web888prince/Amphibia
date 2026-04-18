@@ -45,8 +45,8 @@ local Theme = {
 
 	Sounds = {
 		Notification = "rbxassetid://132969094145770",
-		Notification_Timing = 1.5
-		Notification_Volume = 1.2
+		Notification_Timing = 1.5,
+		Notification_Volume = 1.5
 	},
 
 	Colors = {
