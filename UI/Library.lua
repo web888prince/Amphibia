@@ -1657,9 +1657,7 @@ function Section:CreateDropdown(config)
 		Size = UDim2.new(0, 62, 0, 18),
 		ZIndex = 3,
 	})
-	AddCorner(valueBadge, 4)
-	AddStroke(valueBadge, Color3.fromRGB(36, 36, 36), 1, 0.2, 1)
-
+	
 	local valueText = New("TextLabel", {
 		Parent = valueBadge,
 		Name = "ValueText",
