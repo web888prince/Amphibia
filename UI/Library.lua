@@ -4,7 +4,7 @@
 
 local Amphibia = {}
 Amphibia.__index = Amphibia
-Amphibia.Version = "1.0.4-final-polish-fix-compile1"
+Amphibia.Version = "1.1 | notification sounds"
 
 --──────────────────────────────────────────────────--
 -- Services
