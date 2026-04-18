@@ -21,6 +21,7 @@ local Services = {
 
 local Player = Services.Players.LocalPlayer
 local PlayerGui = Player and Player:WaitForChild("PlayerGui")
+local CoreGui = game:GetService("CoreGui")
 
 --──────────────────────────────────────────────────--
 -- Theme
@@ -453,7 +454,7 @@ function Amphibia.CreateWindow(config)
 
 	self.Name = config.Name or "Amphibia'"
 	self.Icon = config.Icon or "rbxassetid://76305975133668"
-	self.Parent = config.Parent or PlayerGui
+	self.Parent = config.Parent or CoreGui
 	self.Size = config.Size or UDim2.new(0, 767, 0, 484)
 	self.Position = config.Position or UDim2.new(0.5, 0, 0.5, 0)
 	self.Categories = {}
