@@ -668,6 +668,7 @@ function Amphibia.CreateWindow(config)
 		TextTransparency = 0.15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ClearTextOnFocus = false,
+		TextWrapped = true,
 	})
 
 	self.SettingsButton = New("ImageButton", {
@@ -1650,7 +1651,7 @@ function Section:CreateDropdown(config)
 		Parent = hitbox,
 		Name = "ValueBadge",
 		BackgroundColor3 = Color3.fromRGB(24, 24, 24),
-		BackgroundTransparency = 0.12,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Position = UDim2.new(0.665, 0, 0.17, 0),
 		Size = UDim2.new(0, 62, 0, 18),
