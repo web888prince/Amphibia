@@ -17,11 +17,13 @@ local Services = {
 	RunService = game:GetService("RunService"),
 	Debris = game:GetService("Debris"),
 	TextService = game:GetService("TextService"),
+	SoundService = game:GetService("SoundService")
 }
 
 local Player = Services.Players.LocalPlayer
 local PlayerGui = Player and Player:WaitForChild("PlayerGui")
 local CoreGui = game:GetService("CoreGui")
+local SoundService = game:GetService("SoundService")
 
 --──────────────────────────────────────────────────--
 -- Theme
@@ -39,6 +41,11 @@ local Theme = {
 		Reset = "rbxassetid://438217404",
 		Freeze = "rbxassetid://13200344988",
 		TripleDot = "rbxassetid://127075876244307",
+	},
+
+	Sounds = {
+		Notification = "132969094145770",
+		Notification_Timing = 1.5
 	},
 
 	Colors = {
@@ -1657,7 +1664,6 @@ function Section:CreateDropdown(config)
 		Size = UDim2.new(0, 62, 0, 18),
 		ZIndex = 3,
 	})
-	
 	local valueText = New("TextLabel", {
 		Parent = valueBadge,
 		Name = "ValueText",
@@ -3089,6 +3095,12 @@ function Window:_CreateNotificationUI(config)
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextWrapped = true,
 	})
+
+	local notificationSound = Instance.new("Sound")
+	notificationSound.Parent = Services.SoundService
+	notificationSound.SoundId = Theme.Sounds.Notification
+	notificationSound:Play()
+	Services.Debris:AddItem(notificationSound, Theme.Sounds.Notification_Timing)
 
 	return ui
 end
