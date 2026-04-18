@@ -292,6 +292,14 @@ end
 local function MakeDraggable(handle, target, options)
 	options = options or {}
 
+	if handle and handle:IsA("GuiObject") then
+		handle.Active = true
+	end
+
+	if target and target:IsA("GuiObject") then
+		target.Active = true
+	end
+
 	local dragging = false
 	local dragStart = nil
 	local startPosition = nil
@@ -1064,7 +1072,7 @@ function Window:_BuildCloseConfirm()
 		Name = "YesButton",
 		Position = UDim2.new(0, 14, 1, -42),
 		Size = UDim2.new(0, 112, 0, 28),
-		BackgroundColor3 = Theme.Colors.Accent,
+		BackgroundColor3 = Color3.fromRGB(26, 26, 26),
 		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		Font = Theme.Font,
@@ -1629,7 +1637,7 @@ function Section:CreateDropdown(config)
 	local selected = multi and {} or (config.Default or options[1])
 	local opened = false
 
-	local holder, hitbox, nameText = CreateBaseControl(self, {
+	local holder, hitbox = CreateBaseControl(self, {
 		Name = config.Name or "Dropdown",
 		LayoutOrder = config.LayoutOrder,
 		ExplorerName = config.ExplorerName,
@@ -1637,39 +1645,53 @@ function Section:CreateDropdown(config)
 
 	holder.AutomaticSize = Enum.AutomaticSize.Y
 
+	local valueBadge = New("Frame", {
+		Parent = hitbox,
+		Name = "ValueBadge",
+		BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+		BackgroundTransparency = 0.12,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0.665, 0, 0.17, 0),
+		Size = UDim2.new(0, 62, 0, 18),
+		ZIndex = 3,
+	})
+	AddCorner(valueBadge, 4)
+	AddStroke(valueBadge, Color3.fromRGB(36, 36, 36), 1, 0.2, 1)
+
+	local valueText = New("TextLabel", {
+		Parent = valueBadge,
+		Name = "ValueText",
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 0, 0, 0),
+		Size = UDim2.new(1, 0, 1, 0),
+		Font = Theme.Font,
+		Text = "",
+		TextSize = 11,
+		TextColor3 = Color3.fromRGB(170, 170, 170),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		ZIndex = 4,
+	})
+
 	local arrow = New("ImageLabel", {
 		Parent = hitbox,
 		Name = "SettingsImageLabel",
 		Image = Theme.Images.TripleDot,
-		Position = UDim2.new(0.905, 0, 0.131, 0),
-		Size = UDim2.new(0, 20, 0, 20),
+		Position = UDim2.new(0.915, 0, 0.131, 0),
+		Size = UDim2.new(0, 18, 0, 18),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ImageTransparency = 0.26,
 		ImageColor3 = Theme.Colors.Text,
-		ZIndex = 3,
-	})
-
-	local valueText = New("TextLabel", {
-		Parent = hitbox,
-		Name = "ValueText",
-		BackgroundTransparency = 1,
-		Position = UDim2.new(0.48, 0, 0, 0),
-		Size = UDim2.new(0.38, 0, 1, 0),
-		Font = Theme.Font,
-		Text = "",
-		TextSize = 11,
-		TextColor3 = Color3.fromRGB(150, 150, 150),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		ZIndex = 3,
+		ZIndex = 4,
 	})
 
 	local listFrame = New("Frame", {
 		Parent = holder,
 		Name = "DropdownList",
+		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 10, 0, 31),
+		Position = UDim2.new(0.5, 0, 0, 31),
 		Size = UDim2.new(0, 245, 0, 0),
 		Visible = false,
 		ClipsDescendants = true,
@@ -1712,6 +1734,7 @@ function Section:CreateDropdown(config)
 
 		for index, option in ipairs(options) do
 			local optionText = tostring(option)
+
 			local optionButton = New("TextButton", {
 				Parent = listFrame,
 				Name = optionText,
@@ -1770,13 +1793,17 @@ function Section:CreateDropdown(config)
 		opened = true
 		listFrame.Visible = true
 		Tween(arrow, Theme.Tween.Fast, { Rotation = 90 })
-		Tween(listFrame, Theme.Tween.Smooth, { Size = UDim2.new(0, 245, 0, math.min(#options * 26, 156)) })
+		Tween(listFrame, Theme.Tween.Smooth, {
+			Size = UDim2.new(0, 245, 0, math.min(#options * 26, 156))
+		})
 	end
 
 	function api:Close()
 		opened = false
 		Tween(arrow, Theme.Tween.Fast, { Rotation = 0 })
-		local closeTween = Tween(listFrame, Theme.Tween.Fast, { Size = UDim2.new(0, 245, 0, 0) })
+		local closeTween = Tween(listFrame, Theme.Tween.Fast, {
+			Size = UDim2.new(0, 245, 0, 0)
+		})
 		if closeTween then
 			closeTween.Completed:Once(function()
 				if not opened and listFrame then
@@ -2283,6 +2310,8 @@ function Window:_BuildColorPicker()
 		BorderSizePixel = 0,
 		Visible = false,
 		ZIndex = 500,
+		ClipsDescendants = true,
+		Active = true,
 	})
 
 	self.ColorPickerFrame = picker
@@ -2306,6 +2335,7 @@ function Window:_BuildColorPicker()
 		Size = UDim2.new(1, 0, 0, 50),
 		BorderSizePixel = 0,
 		ZIndex = 505,
+		Active = true,
 	})
 	self.ColorPickerHeader = header
 	AddCorner(header, 4)
@@ -2333,7 +2363,7 @@ function Window:_BuildColorPicker()
 		BackgroundTransparency = 0.5,
 		ZIndex = 505,
 		Position = UDim2.new(0, 0, 0, 50),
-		Size = UDim2.new(0, 608, 0, 17),
+		Size = UDim2.new(1, 0, 0, 17),
 	})
 	AddGradient(glow, {
 		Rotation = 90,
@@ -2873,22 +2903,23 @@ end
 --──────────────────────────────────────────────────--
 
 function Window:_ReflowNotifications()
-	local index = 0
-
 	for i = #self.NotificationStack, 1, -1 do
 		local data = self.NotificationStack[i]
-		if not data.Frame or not data.Frame.Parent then
+		if not data.Frame or not data.Frame.Parent or data.Closed then
 			table.remove(self.NotificationStack, i)
 		end
 	end
 
-	for i = #self.NotificationStack, 1, -1 do
+	local visualIndex = 0
+
+	for i = 1, #self.NotificationStack do
 		local data = self.NotificationStack[i]
+
 		if data and data.Frame and data.Frame.Parent and not data.Manual then
 			Tween(data.Frame, Theme.Tween.Smooth, {
-				Position = UDim2.new(1, -20, 1, -20 - (index * 80))
+				Position = UDim2.new(1, -20, 1, -20 - (visualIndex * 80))
 			})
-			index += 1
+			visualIndex += 1
 		end
 	end
 end
@@ -3013,15 +3044,15 @@ function Window:_CreateNotificationUI(config)
 		Parent = ui.Frame,
 		Name = "TimeLeft",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.818, 0, 0.64, 0),
-		Size = UDim2.new(0, 44, 0, 20),
+		Position = UDim2.new(0.86, 0, 0.64, 0),
+		Size = UDim2.new(0, 32, 0, 20),
 		ZIndex = 1004,
 		Text = tostring(config.Duration or 3) .. "s",
 		Font = Theme.Font,
 		TextColor3 = Color3.fromRGB(80, 80, 80),
 		TextTransparency = 1,
 		TextSize = 10,
-		TextXAlignment = Enum.TextXAlignment.Center,
+		TextXAlignment = Enum.TextXAlignment.Right,
 	})
 
 	ui.Title = New("TextLabel", {
@@ -3098,6 +3129,18 @@ function Window:Notify(config)
 	}
 
 	table.insert(self.NotificationStack, state)
+
+	local zBoost = (#self.NotificationStack - 1) * 10
+	ui.Frame.ZIndex = ui.Frame.ZIndex + zBoost
+	for _, obj in ipairs(ui.Frame:GetDescendants()) do
+		if obj:IsA("GuiObject") or obj:IsA("UIStroke") then
+			obj.ZIndex = obj.ZIndex + zBoost
+		end
+	end
+
+	local yOffset = (#self.NotificationStack - 1) * 80
+	ui.Frame.Position = UDim2.new(1, 300, 1, -20 - yOffset)
+
 	MakeDraggable(ui.DragLine, ui.Frame, { Smooth = true })
 
 	ui.DragLine.InputBegan:Connect(function(input)
@@ -3135,6 +3178,7 @@ function Window:Notify(config)
 	end
 
 	ui.Close.MouseButton1Click:Connect(closeNotification)
+
 	ui.Freeze.MouseButton1Click:Connect(function()
 		state.Frozen = not state.Frozen
 		Tween(ui.FreezeIcon, Theme.Tween.Fast, {
@@ -3151,20 +3195,19 @@ function Window:Notify(config)
 	end)
 
 	ui.Freeze.MouseEnter:Connect(function()
-		Tween(ui.FreezeIcon, Theme.Tween.Fast, { ImageTransparency = state.Frozen and 0.22 or 0.55 })
+		Tween(ui.FreezeIcon, Theme.Tween.Fast, {
+			ImageTransparency = state.Frozen and 0.22 or 0.55
+		})
 	end)
 
 	ui.Freeze.MouseLeave:Connect(function()
-		Tween(ui.FreezeIcon, Theme.Tween.Fast, { ImageTransparency = state.Frozen and 0.22 or 0.84 })
+		Tween(ui.FreezeIcon, Theme.Tween.Fast, {
+			ImageTransparency = state.Frozen and 0.22 or 0.84
+		})
 	end)
 
-	self:_ReflowNotifications()
 	self:_FadeNotificationUI(ui, true)
-
-	Tween(ui.Frame, Theme.Tween.Spring, {
-		BackgroundTransparency = 0,
-		Position = UDim2.new(1, -20, 1, -20),
-	})
+	self:_ReflowNotifications()
 
 	task.spawn(function()
 		local remaining = duration
