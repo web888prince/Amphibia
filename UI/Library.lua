@@ -46,6 +46,7 @@ local Theme = {
 	Sounds = {
 		Notification = "rbxassetid://132969094145770",
 		Notification_Timing = 1.5
+		Notification_Volume = 1.2
 	},
 
 	Colors = {
@@ -3100,6 +3101,7 @@ function Window:_CreateNotificationUI(config)
 	notificationSound.Parent = Services.SoundService
 	notificationSound.SoundId = Theme.Sounds.Notification
 	notificationSound:Play()
+	notificationSound.Volume = Theme.Sounds.Notification_Volume
 	Services.Debris:AddItem(notificationSound, Theme.Sounds.Notification_Timing)
 
 	return ui
