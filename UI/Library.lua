@@ -44,7 +44,7 @@ local Theme = {
 	},
 
 	Sounds = {
-		Notification = "132969094145770",
+		Notification = "rbxassetid://132969094145770",
 		Notification_Timing = 1.5
 	},
 
