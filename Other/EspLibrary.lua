@@ -215,6 +215,45 @@ local function setByPath(tbl, path, value)
 	current[parts[#parts]] = value
 end
 
+local function normalizeBooleanLike(value)
+	if type(value) == "boolean" then
+		return value
+	end
+
+	if type(value) ~= "string" then
+		return nil
+	end
+
+	local lowered = string.lower(value)
+
+	if lowered == "enabled" or lowered == "e" or lowered == "true" then
+		return true
+	end
+
+	if lowered == "disabled" or lowered == "d" or lowered == "false" then
+		return false
+	end
+
+	return nil
+end
+
+local function normalizeBooleanLikeDeep(value)
+	local normalized = normalizeBooleanLike(value)
+	if normalized ~= nil then
+		return normalized
+	end
+
+	if type(value) ~= "table" then
+		return value
+	end
+
+	local result = {}
+	for k, v in pairs(value) do
+		result[k] = normalizeBooleanLikeDeep(v)
+	end
+	return result
+end
+
 local function createLine(z)
 	local obj = Drawing.new("Line")
 	obj.Visible = false
@@ -290,7 +329,7 @@ function ESP.new(config)
 
 	self.Config = deepCopy(DEFAULT_CONFIG)
 	if type(config) == "table" then
-		deepMerge(self.Config, config)
+		deepMerge(self.Config, normalizeBooleanLikeDeep(config))
 	end
 
 	self._entries = {}
@@ -319,6 +358,11 @@ function ESP:Set(path, value)
 		return self
 	end
 
+	local normalized = normalizeBooleanLike(value)
+	if normalized ~= nil then
+		value = normalized
+	end
+
 	if path == "Snapline.Mode" and not VALID_SNAPLINE_MODES[value] then
 		warn("[ESP] Invalid Snapline.Mode:", value)
 		return self
@@ -333,6 +377,8 @@ function ESP:UpdateConfig(patch)
 		return self
 	end
 
+	patch = normalizeBooleanLikeDeep(patch)
+
 	if patch.Snapline and patch.Snapline.Mode and not VALID_SNAPLINE_MODES[patch.Snapline.Mode] then
 		warn("[ESP] Invalid Snapline.Mode:", patch.Snapline.Mode)
 		patch = deepCopy(patch)
@@ -344,7 +390,8 @@ function ESP:UpdateConfig(patch)
 end
 
 function ESP:SetEnabled(enabled)
-	self.Config.Enabled = enabled and true or false
+	local normalized = normalizeBooleanLike(enabled)
+	self.Config.Enabled = normalized ~= nil and normalized or (enabled and true or false)
 
 	if not self.Config.Enabled then
 		for _, entry in pairs(self._entries) do
@@ -360,7 +407,8 @@ function ESP:SetFeature(name, value)
 		return self
 	end
 
-	self.Config.Features[name] = value and true or false
+	local normalized = normalizeBooleanLike(value)
+	self.Config.Features[name] = normalized ~= nil and normalized or (value and true or false)
 	return self
 end
 
