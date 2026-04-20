@@ -19,7 +19,7 @@ local DEFAULT_CONFIG = {
 	Enabled = true,
 
 	Checks = {
-		Team = false, -- false bc its not ready yet
+		Team = true,
 		Visible = false,
 		MaxDistance = math.huge,
 	},
@@ -32,7 +32,7 @@ local DEFAULT_CONFIG = {
 		Tracer = true,
 		Name = true,
 		Info = true,
-		Tool = false, -- false bc its not ready yet
+		Tool = true,
 		Arrows = true,
 		Skeleton = true,
 		Chams = false,
