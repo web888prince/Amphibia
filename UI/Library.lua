@@ -1258,7 +1258,7 @@ function Category:CreateTab(name)
 		Name = tab.Name .. "TabContent",
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0, 185, 0, 60),
-		Size = UDim2.new(0, 582, 0, 424),
+		Size = UDim2.new(0, 599, 0, 435),
 		ZIndex = 1,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
