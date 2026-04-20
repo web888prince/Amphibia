@@ -1257,8 +1257,8 @@ function Category:CreateTab(name)
 		Parent = self.Window.TabsContentFolder,
 		Name = tab.Name .. "TabContent",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 185, 0, 48),
-		Size = UDim2.new(0, 582, 0, 436),
+		Position = UDim2.new(0, 185, 0, 60),
+		Size = UDim2.new(0, 582, 0, 424),
 		ZIndex = 1,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -1301,7 +1301,7 @@ function Category:CreateTab(name)
 			Parent = column,
 			PaddingBottom = UDim.new(0, 10),
 			PaddingLeft = UDim.new(0, 10),
-			PaddingTop = UDim.new(0, 10),
+			PaddingTop = UDim.new(0, 8),
 		})
 	end
 
@@ -1974,19 +1974,54 @@ function Section:CreateSlider(config)
 	local value = ClampNumber(config.Default or min, min, max)
 	value = RoundToStep(value, step)
 
-	local holder, hitbox = CreateBaseControl(self, {
+	local holder, hitbox, nameText = CreateBaseControl(self, {
 		Name = config.Name or "Slider",
 		LayoutOrder = config.LayoutOrder,
 		ExplorerName = config.ExplorerName,
 	}, "Slider")
 
+	local holderWidth = 265
+
+	local labelBounds = Services.TextService:GetTextSize(
+		tostring(config.Name or "Slider"),
+		14,
+		Theme.Font,
+		Vector2.new(math.huge, math.huge)
+	)
+
+	local widestValueBounds = 0
+	for _, text in ipairs({
+		tostring(min),
+		tostring(max),
+		tostring(value),
+	}) do
+		local bounds = Services.TextService:GetTextSize(
+			text,
+			10,
+			Theme.Font,
+			Vector2.new(math.huge, math.huge)
+		)
+
+		if bounds.X > widestValueBounds then
+			widestValueBounds = bounds.X
+		end
+	end
+
+	local valueBoxWidth = math.clamp(math.ceil(widestValueBounds) + 8, 20, 28)
+	local sliderStartX = math.clamp(math.ceil(labelBounds.X) + 16, 90, 128)
+	local sliderRightPadding = valueBoxWidth + 12
+	local sliderWidth = math.max(70, holderWidth - sliderStartX - sliderRightPadding)
+
+	nameText.Size = UDim2.new(0, sliderStartX - 8, 1, 0)
+
 	local sliderLine = New("Frame", {
 		Parent = hitbox,
 		Name = "SliderLine",
+		AnchorPoint = Vector2.new(0, 0.5),
 		BackgroundColor3 = Theme.Colors.Text,
 		BorderSizePixel = 0,
-		Position = UDim2.new(0.209, 0, 0.431, 0),
-		Size = UDim2.new(0, 152, 0, 3),
+		Position = UDim2.new(0, sliderStartX, 0.5, 0),
+		Size = UDim2.new(0, sliderWidth, 0, 3),
 		ZIndex = 3,
 	})
 
@@ -2034,16 +2069,18 @@ function Section:CreateSlider(config)
 	local valueBox = New("TextBox", {
 		Parent = hitbox,
 		Name = "ValueTextBox",
+		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Position = UDim2.new(0.835, 0, 0.225, 0),
-		Size = UDim2.new(0, 30, 0, 15),
+		Position = UDim2.new(1, -4, 0.5, 0),
+		Size = UDim2.new(0, valueBoxWidth, 0, 14),
 		Font = Theme.Font,
 		PlaceholderColor3 = Color3.fromRGB(178, 178, 178),
 		PlaceholderText = tostring(min),
 		Text = tostring(value),
 		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Center,
 		TextColor3 = Theme.Colors.Text,
 		ClearTextOnFocus = false,
 		ZIndex = 3,
@@ -2061,8 +2098,15 @@ function Section:CreateSlider(config)
 
 	local function render(skipCallback)
 		local alpha = valueToAlpha(value)
-		Tween(knob, Theme.Tween.Fast, { Position = UDim2.new(alpha, 0, 0.5, 0) })
-		Tween(fill, Theme.Tween.Fast, { Size = UDim2.new(alpha, 0, 1, 0) })
+
+		Tween(knob, Theme.Tween.Fast, {
+			Position = UDim2.new(alpha, 0, 0.5, 0)
+		})
+
+		Tween(fill, Theme.Tween.Fast, {
+			Size = UDim2.new(alpha, 0, 1, 0)
+		})
+
 		valueBox.Text = tostring(value)
 
 		if not skipCallback then
@@ -2073,8 +2117,14 @@ function Section:CreateSlider(config)
 	local function setFromX(x)
 		local left = sliderLine.AbsolutePosition.X
 		local width = sliderLine.AbsoluteSize.X
+
+		if width <= 0 then
+			return
+		end
+
 		local alpha = math.clamp((x - left) / width, 0, 1)
 		local raw = min + ((max - min) * alpha)
+
 		value = ClampNumber(RoundToStep(raw, step), min, max)
 		render(false)
 	end
