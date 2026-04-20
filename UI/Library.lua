@@ -46,7 +46,7 @@ local Theme = {
 	Sounds = {
 		Notification = "rbxassetid://132969094145770",
 		Notification_Timing = 1.5,
-		Notification_Volume = 1.5
+		Notification_Volume = 1.7
 	},
 
 	Colors = {
@@ -417,13 +417,15 @@ local function CreateBaseControl(section, config, explorerName)
 		ZIndex = 2,
 	})
 
-	hitbox.MouseEnter:Connect(function()
-		Tween(nameText, Theme.Tween.Fast, { TextColor3 = Color3.fromRGB(179, 179, 179) })
-	end)
+	if config.DisableDefaultHover ~= true then
+		hitbox.MouseEnter:Connect(function()
+			Tween(nameText, Theme.Tween.Fast, { TextColor3 = Color3.fromRGB(179, 179, 179) })
+		end)
 
-	hitbox.MouseLeave:Connect(function()
-		Tween(nameText, Theme.Tween.Fast, { TextColor3 = Theme.Colors.Text })
-	end)
+		hitbox.MouseLeave:Connect(function()
+			Tween(nameText, Theme.Tween.Fast, { TextColor3 = Theme.Colors.Text })
+		end)
+	end
 
 	section.Window:_RegisterSearchable({
 		Name = config.Name or explorerName or "Control",
@@ -811,7 +813,7 @@ function Amphibia.CreateWindow(config)
 	self.SettingsButton.MouseButton1Click:Connect(function()
 		self:Notify({
 			Title = "Settings",
-			Description = "Settings panel is reserved for future options.",
+			Description = "Maybe i add settings in future or i just remove it idk",
 			Duration = 3,
 		})
 	end)
@@ -1534,9 +1536,17 @@ function Section:CreateToggle(config)
 		Name = config.Name or "Toggle",
 		LayoutOrder = config.LayoutOrder,
 		ExplorerName = config.ExplorerName,
+		DisableDefaultHover = true,
 	}, "Toggle")
 
 	local state = config.Default == true
+	local hovering = false
+
+	local inactiveColor = Theme.Colors.Text
+	local inactiveHoverColor = Color3.fromRGB(179, 179, 179)
+
+	local activeColor = Color3.fromRGB(153, 70, 255)
+	local activeHoverColor = Color3.fromRGB(132, 58, 220)
 
 	local toggleFrame = New("Frame", {
 		Parent = hitbox,
@@ -1583,11 +1593,18 @@ function Section:CreateToggle(config)
 
 	local api = {}
 
+	local function getTargetTextColor()
+		if state then
+			return hovering and activeHoverColor or activeColor
+		else
+			return hovering and inactiveHoverColor or inactiveColor
+		end
+	end
+
 	local function render(skipCallback)
 		if state then
 			active.Visible = true
 			Tween(active, Theme.Tween.Spring, { Size = UDim2.new(0, 14, 0, 14) })
-			Tween(nameText, Theme.Tween.Fast, { TextColor3 = Color3.fromRGB(153, 70, 255) })
 		else
 			local hideTween = Tween(active, Theme.Tween.Fast, { Size = UDim2.new(0, 0, 0, 0) })
 			if hideTween then
@@ -1599,8 +1616,11 @@ function Section:CreateToggle(config)
 			else
 				active.Visible = false
 			end
-			Tween(nameText, Theme.Tween.Fast, { TextColor3 = Theme.Colors.Text })
 		end
+
+		Tween(nameText, Theme.Tween.Fast, {
+			TextColor3 = getTargetTextColor()
+		})
 
 		if not skipCallback then
 			SafeCallback(config.Callback, state)
@@ -1625,6 +1645,20 @@ function Section:CreateToggle(config)
 	api.Destroy = function()
 		holder:Destroy()
 	end
+
+	hitbox.MouseEnter:Connect(function()
+		hovering = true
+		Tween(nameText, Theme.Tween.Fast, {
+			TextColor3 = getTargetTextColor()
+		})
+	end)
+
+	hitbox.MouseLeave:Connect(function()
+		hovering = false
+		Tween(nameText, Theme.Tween.Fast, {
+			TextColor3 = getTargetTextColor()
+		})
+	end)
 
 	hitbox.MouseButton1Click:Connect(function()
 		api:Toggle()
@@ -2756,7 +2790,7 @@ function Window:_BuildColorPicker()
 
 	Services.UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				if draggingSquare or draggingHue then
+			if draggingSquare or draggingHue then
 				local pickedColor = self:_GetPickerColor()
 				self:_PushPickerHistory(pickedColor)
 				self:_AddRecentColor(pickedColor)
