@@ -43,7 +43,9 @@ local DEFAULT_CONFIG = {
 
 	Auto = {
 		BoundsMargin = 18,
+		CombatBoundsMargin = 120,
 		SpawnAttachDistance = 95,
+		SpawnFallbackDistance = 220,
 		PreferOppositeSpawn = true,
 		MaxArenaDistance = math.huge,
 	},
@@ -66,9 +68,12 @@ local DEFAULT_CONFIG = {
 		HealthGood = Color3.fromRGB(92, 255, 120),
 		HealthMid = Color3.fromRGB(255, 214, 92),
 		HealthBad = Color3.fromRGB(255, 86, 86),
+
 		SlotBg = Color3.fromRGB(9, 9, 9),
 		SlotBg2 = Color3.fromRGB(15, 15, 15),
-		SlotEquipped = Color3.fromRGB(64, 33, 114),
+
+		-- зеленый фон если предмет сейчас в руках
+		SlotEquipped = Color3.fromRGB(46, 128, 70),
 	},
 }
 
@@ -422,6 +427,7 @@ function OpponentInfo.new(config)
 	self._trackedPlayer = nil
 	self._trackedCharacter = nil
 	self._trackedName = nil
+	self._lockedArenaModel = nil
 	self._lastUpdate = 0
 	self._connections = {}
 	self._assetCache = {}
@@ -627,7 +633,7 @@ function OpponentInfo:_buildGui()
 		Size = UDim2.new(1, -24, 0, 140),
 	})
 
-	local slotsGrid = newInstance("UIGridLayout", {
+	newInstance("UIGridLayout", {
 		Parent = self.SlotsHolder,
 		FillDirection = Enum.FillDirection.Horizontal,
 		FillDirectionMaxCells = 2,
@@ -782,7 +788,11 @@ function OpponentInfo:_getAllArenaDescriptors()
 	return result
 end
 
-function OpponentInfo:_pointInsideModelBounds(model, position)
+function OpponentInfo:_getDescriptorForArenaModel(model)
+	return self:_getArenaDescriptor(model)
+end
+
+function OpponentInfo:_pointInsideModelBounds(model, position, margin)
 	local ok, cf, size = pcall(function()
 		return model:GetBoundingBox()
 	end)
@@ -791,7 +801,11 @@ function OpponentInfo:_pointInsideModelBounds(model, position)
 		return false
 	end
 
-	local margin = self.Config.Auto.BoundsMargin or 0
+	margin = tonumber(margin)
+	if margin == nil then
+		margin = self.Config.Auto.BoundsMargin or 0
+	end
+
 	local localPos = cf:PointToObjectSpace(position)
 
 	return math.abs(localPos.X) <= (size.X * 0.5 + margin)
@@ -808,7 +822,7 @@ function OpponentInfo:_findArenaForPosition(position)
 		local d2 = (position - arena.Spawn2.Position).Magnitude
 		local minDistance = math.min(d1, d2)
 		local nearestSide = d1 <= d2 and 1 or 2
-		local insideBounds = self:_pointInsideModelBounds(arena.Model, position)
+		local insideBounds = self:_pointInsideModelBounds(arena.Model, position, self.Config.Auto.BoundsMargin or 18)
 
 		if insideBounds or minDistance <= spawnAttachDistance then
 			local candidate = {
@@ -840,6 +854,46 @@ function OpponentInfo:_findArenaForPosition(position)
 	end
 
 	return nil
+end
+
+function OpponentInfo:_isPositionStillInArena(model, position)
+	if not model or not position then
+		return false, nil
+	end
+
+	local descriptor = self:_getDescriptorForArenaModel(model)
+	if not descriptor then
+		return false, nil
+	end
+
+	local insideCombatBounds = self:_pointInsideModelBounds(
+		model,
+		position,
+		self.Config.Auto.CombatBoundsMargin or 120
+	)
+
+	local d1 = (position - descriptor.Spawn1.Position).Magnitude
+	local d2 = (position - descriptor.Spawn2.Position).Magnitude
+	local nearestSpawnDistance = math.min(d1, d2)
+	local nearestSide = d1 <= d2 and 1 or 2
+
+	local nearSpawnFallback = nearestSpawnDistance <= (self.Config.Auto.SpawnFallbackDistance or 220)
+
+	if insideCombatBounds or nearSpawnFallback then
+		return true, {
+			Model = descriptor.Model,
+			Name = descriptor.Name,
+			Spawn1 = descriptor.Spawn1,
+			Spawn2 = descriptor.Spawn2,
+			Spawn1Distance = d1,
+			Spawn2Distance = d2,
+			DistanceToNearestSpawn = nearestSpawnDistance,
+			NearestSpawnIndex = nearestSide,
+			InsideBounds = insideCombatBounds,
+		}
+	end
+
+	return false, nil
 end
 
 function OpponentInfo:_resolvePlayer(target)
@@ -907,7 +961,8 @@ end
 
 function OpponentInfo:_getWeaponAsset(weaponName)
 	if self._assetCache[weaponName] ~= nil then
-		return self._assetCache[weaponName]
+		local cached = self._assetCache[weaponName]
+		return cached == false and nil or cached
 	end
 
 	local url = WEAPON_URL_BY_NAME[weaponName]
@@ -1025,15 +1080,22 @@ function OpponentInfo:_setSlotVisual(slotName, weaponData)
 		return
 	end
 
+	local targetColor = theme.SlotBg
+	if weaponData and weaponData.InHand then
+		targetColor = theme.SlotEquipped
+	end
+
+	tween(slot.Card, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundColor3 = targetColor
+	})
+
 	if not weaponData then
-		slot.Card.BackgroundColor3 = theme.SlotBg
 		slot.WeaponName.Text = "Empty"
 		slot.Sub.Text = "-"
 		slot.Icon.Image = ""
 		return
 	end
 
-	slot.Card.BackgroundColor3 = weaponData.InHand and theme.SlotEquipped or theme.SlotBg
 	slot.WeaponName.Text = weaponData.WeaponName or "Unknown"
 
 	if weaponData.SkinName and weaponData.SkinName ~= "" then
@@ -1100,6 +1162,29 @@ function OpponentInfo:IsTrackedPlayerInCurrentMatch()
 		return false
 	end
 
+	local localCharacter = LocalPlayer and LocalPlayer.Character
+	local targetCharacter = self._trackedPlayer.Character
+
+	if not localCharacter or not targetCharacter then
+		return false
+	end
+
+	local localRoot = getRoot(localCharacter)
+	local targetRoot = getRoot(targetCharacter)
+
+	if not localRoot or not targetRoot then
+		return false
+	end
+
+	if self._lockedArenaModel then
+		local localOk, localArena = self:_isPositionStillInArena(self._lockedArenaModel, localRoot.Position)
+		local targetOk, targetArena = self:_isPositionStillInArena(self._lockedArenaModel, targetRoot.Position)
+
+		if localOk and targetOk then
+			return true, localArena, targetArena
+		end
+	end
+
 	local localArena = self:GetLocalArenaInfo()
 	local targetArena = self:GetPlayerArenaInfo(self._trackedPlayer)
 
@@ -1115,6 +1200,7 @@ function OpponentInfo:IsTrackedPlayerInCurrentMatch()
 		return false
 	end
 
+	self._lockedArenaModel = localArena.Model
 	return true, localArena, targetArena
 end
 
@@ -1266,6 +1352,15 @@ function OpponentInfo:TrackPlayer(target)
 	self._trackedPlayer = player
 	self._trackedCharacter = player.Character
 	self._trackedName = player.Name
+	self._lockedArenaModel = nil
+
+	local localArena = self:GetLocalArenaInfo()
+	local targetArena = self:GetPlayerArenaInfo(player)
+
+	if localArena and targetArena and localArena.Model == targetArena.Model then
+		self._lockedArenaModel = localArena.Model
+	end
+
 	self:_setAvatarForPlayer(player)
 	self:_update()
 
@@ -1288,6 +1383,7 @@ function OpponentInfo:ClearTrackedPlayer()
 	self._trackedPlayer = nil
 	self._trackedCharacter = nil
 	self._trackedName = nil
+	self._lockedArenaModel = nil
 	self:_setNoTargetState()
 	return self
 end
@@ -1384,6 +1480,7 @@ function OpponentInfo:Destroy()
 	self._trackedPlayer = nil
 	self._trackedCharacter = nil
 	self._trackedName = nil
+	self._lockedArenaModel = nil
 	self._avatarUserId = nil
 
 	return nil
