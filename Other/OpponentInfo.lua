@@ -1028,7 +1028,7 @@ function OpponentInfo:_update()
 
 	local character = self._trackedPlayer.Character
 	if not character or not isAliveCharacter(character) then
-		self:_trackedCharacter = character
+		self._trackedCharacter = character
 		self.PlayerName.Text = self._trackedPlayer.Name
 		self.Status.Text = "Target not alive / no character"
 		self.ArenaText.Text = "Arena: -"
