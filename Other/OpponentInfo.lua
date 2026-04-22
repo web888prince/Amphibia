@@ -1,8 +1,12 @@
+--// Amphibia Opponent Info Library
+--// One-file ModuleScript
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -23,18 +27,23 @@ local GET_ASSET_FUNCTION =
 local DEFAULT_CONFIG = {
 	Parent = nil,
 	Visible = true,
-	UpdateInterval = 0.05,
+	UpdateInterval = 0.06,
 	AutoDetect = false,
 
 	Window = {
-		Size = UDim2.new(0, 356, 0, 238),
-		Position = UDim2.new(0.5, -178, 0.18, 0),
+		Size = UDim2.new(0, 432, 0, 320),
+		Position = UDim2.new(0.5, -216, 0.16, 0),
 		AnchorPoint = Vector2.new(0.5, 0),
 		Title = "Opponent information",
 	},
 
+	Tracking = {
+		ClearInvalidTarget = false,
+	},
+
 	Auto = {
 		BoundsMargin = 18,
+		SpawnAttachDistance = 95,
 		PreferOppositeSpawn = true,
 		MaxArenaDistance = math.huge,
 	},
@@ -45,20 +54,21 @@ local DEFAULT_CONFIG = {
 	},
 
 	Theme = {
-		Background = Color3.fromRGB(15, 15, 15),
-		Background2 = Color3.fromRGB(22, 22, 22),
+		Background = Color3.fromRGB(10, 10, 10),
+		Background2 = Color3.fromRGB(18, 18, 18),
 		Stroke = Color3.fromRGB(42, 42, 42),
 		StrokeDark = Color3.fromRGB(0, 0, 0),
 		Text = Color3.fromRGB(255, 255, 255),
-		SubText = Color3.fromRGB(175, 175, 175),
-		Muted = Color3.fromRGB(115, 115, 115),
+		SubText = Color3.fromRGB(180, 180, 180),
+		Muted = Color3.fromRGB(120, 120, 120),
 		Accent = Color3.fromRGB(150, 64, 255),
 		Accent2 = Color3.fromRGB(238, 48, 255),
-		HealthGood = Color3.fromRGB(65, 255, 120),
-		HealthBad = Color3.fromRGB(255, 70, 70),
-		SlotBg = Color3.fromRGB(20, 20, 20),
-		SlotBg2 = Color3.fromRGB(28, 28, 28),
-		SlotEquipped = Color3.fromRGB(84, 45, 145),
+		HealthGood = Color3.fromRGB(92, 255, 120),
+		HealthMid = Color3.fromRGB(255, 214, 92),
+		HealthBad = Color3.fromRGB(255, 86, 86),
+		SlotBg = Color3.fromRGB(9, 9, 9),
+		SlotBg2 = Color3.fromRGB(15, 15, 15),
+		SlotEquipped = Color3.fromRGB(64, 33, 114),
 	},
 }
 
@@ -203,7 +213,12 @@ local function tween(object, info, properties)
 	if not object or not object.Parent then
 		return nil
 	end
-	local t = TweenService:Create(object, info or TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), properties)
+
+	local t = TweenService:Create(
+		object,
+		info or TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		properties
+	)
 	t:Play()
 	return t
 end
@@ -233,15 +248,14 @@ local function addGradient(parent, colorSequence, rotation)
 	})
 end
 
-local function safeFindChild(parent, name)
-	if not parent then
+local function getRoot(character)
+	if not character then
 		return nil
 	end
-	return parent:FindFirstChild(name)
-end
 
-local function getRoot(character)
-	return character and character:FindFirstChild("HumanoidRootPart") or nil
+	return character:FindFirstChild("HumanoidRootPart")
+		or character:FindFirstChild("Torso")
+		or character.PrimaryPart
 end
 
 local function getHumanoid(character)
@@ -249,24 +263,24 @@ local function getHumanoid(character)
 end
 
 local function isAliveCharacter(character)
-	local humanoid = getHumanoid(character)
+	local hum = getHumanoid(character)
 	local root = getRoot(character)
-	return humanoid and humanoid.Health > 0 and root
+	return hum and hum.Health > 0 and root ~= nil
 end
 
 local function splitByDelimiter(text, delimiter)
 	local result = {}
-	local start = 1
+	local startIndex = 1
 
 	while true do
-		local i, j = string.find(text, delimiter, start, true)
+		local i, j = string.find(text, delimiter, startIndex, true)
 		if not i then
-			table.insert(result, string.sub(text, start))
+			table.insert(result, string.sub(text, startIndex))
 			break
 		end
 
-		table.insert(result, string.sub(text, start, i - 1))
-		start = j + 1
+		table.insert(result, string.sub(text, startIndex, i - 1))
+		startIndex = j + 1
 	end
 
 	return result
@@ -286,11 +300,12 @@ local function parseViewModelName(name)
 end
 
 local function sanitizeFileName(name)
-	return (name:gsub("[^%w%-%._ ]", "_"))
+	return (tostring(name):gsub("[^%w%-%._ ]", "_"))
 end
 
 local function getFileExtensionFromUrl(url)
-	local ext = string.match(url, "%.([A-Za-z0-9]+)$")
+	local clean = tostring(url):match("^[^%?]+") or tostring(url)
+	local ext = clean:match("%.([A-Za-z0-9]+)$")
 	if not ext then
 		return ".png"
 	end
@@ -319,7 +334,76 @@ end
 
 local function getHealthColor(theme, percent)
 	percent = math.clamp(percent, 0, 1)
-	return lerpColor(theme.HealthBad, theme.HealthGood, percent)
+
+	if percent > 0.6 then
+		return lerpColor(theme.HealthMid, theme.HealthGood, (percent - 0.6) / 0.4)
+	elseif percent > 0.3 then
+		return lerpColor(theme.HealthBad, theme.HealthMid, (percent - 0.3) / 0.3)
+	else
+		return theme.HealthBad
+	end
+end
+
+local function makeDraggableSmooth(handle, target)
+	if not handle or not target then
+		return
+	end
+
+	handle.Active = true
+	target.Active = true
+
+	local dragging = false
+	local dragStart
+	local startPosition
+	local dragInput
+	local currentTween
+
+	local function update(input)
+		local delta = input.Position - dragStart
+		local goal = UDim2.new(
+			startPosition.X.Scale,
+			startPosition.X.Offset + delta.X,
+			startPosition.Y.Scale,
+			startPosition.Y.Offset + delta.Y
+		)
+
+		if currentTween then
+			currentTween:Cancel()
+		end
+
+		currentTween = TweenService:Create(
+			target,
+			TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Position = goal }
+		)
+		currentTween:Play()
+	end
+
+	handle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPosition = target.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	handle.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input == dragInput then
+			update(input)
+		end
+	end)
 end
 
 function OpponentInfo.new(config)
@@ -341,7 +425,7 @@ function OpponentInfo.new(config)
 	self._lastUpdate = 0
 	self._connections = {}
 	self._assetCache = {}
-	self._arenaCache = {}
+	self._avatarUserId = nil
 
 	self:_buildGui()
 	self:_connectLoop()
@@ -353,6 +437,21 @@ function OpponentInfo.new(config)
 	end
 
 	return self
+end
+
+function OpponentInfo:_connect(signal, callback)
+	local connection = signal:Connect(callback)
+	table.insert(self._connections, connection)
+	return connection
+end
+
+function OpponentInfo:_disconnectAll()
+	for _, connection in ipairs(self._connections) do
+		pcall(function()
+			connection:Disconnect()
+		end)
+	end
+	table.clear(self._connections)
 end
 
 function OpponentInfo:_buildGui()
@@ -376,37 +475,38 @@ function OpponentInfo:_buildGui()
 		BackgroundColor3 = theme.Background,
 		BorderSizePixel = 0,
 		Visible = true,
+		ClipsDescendants = true,
 	})
 
-	addCorner(self.Root, 6)
+	addCorner(self.Root, 8)
 	addStroke(self.Root, theme.Stroke, 1, 0)
-	addStroke(self.Root, theme.StrokeDark, 1, 0.45)
+	addStroke(self.Root, theme.StrokeDark, 1, 0.4)
 	addGradient(self.Root, ColorSequence.new({
 		ColorSequenceKeypoint.new(0, theme.Background2),
 		ColorSequenceKeypoint.new(1, theme.Background),
 	}), -90)
 
-	local titleBar = newInstance("Frame", {
-		Name = "TitleBar",
+	self.Header = newInstance("Frame", {
+		Name = "Header",
 		Parent = self.Root,
 		BackgroundColor3 = theme.Background2,
 		BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, 32),
+		Size = UDim2.new(1, 0, 0, 40),
 	})
 
-	addCorner(titleBar, 6)
-	addStroke(titleBar, theme.StrokeDark, 1, 0.65)
+	addCorner(self.Header, 8)
+	addStroke(self.Header, theme.StrokeDark, 1, 0.55)
 
 	self.Title = newInstance("TextLabel", {
 		Name = "Title",
-		Parent = titleBar,
+		Parent = self.Header,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 10, 0, 0),
-		Size = UDim2.new(1, -20, 1, 0),
+		Position = UDim2.new(0, 12, 0, 0),
+		Size = UDim2.new(1, -24, 1, 0),
 		Font = Enum.Font.RobotoMono,
 		Text = self.Config.Window.Title,
 		TextColor3 = theme.Text,
-		TextSize = 14,
+		TextSize = 18,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 
@@ -414,34 +514,20 @@ function OpponentInfo:_buildGui()
 		Name = "TopInfo",
 		Parent = self.Root,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 10, 0, 40),
-		Size = UDim2.new(1, -20, 0, 72),
+		Position = UDim2.new(0, 12, 0, 50),
+		Size = UDim2.new(1, -24, 0, 78),
 	})
-
-	self.Avatar = newInstance("ImageLabel", {
-		Name = "Avatar",
-		Parent = topInfo,
-		BackgroundColor3 = theme.Background2,
-		BorderSizePixel = 0,
-		Position = UDim2.new(1, -56, 0, 0),
-		Size = UDim2.new(0, 56, 0, 56),
-		Image = "",
-		BackgroundTransparency = 0,
-	})
-
-	addCorner(self.Avatar, 6)
-	addStroke(self.Avatar, theme.Stroke, 1, 0)
 
 	self.PlayerName = newInstance("TextLabel", {
 		Name = "PlayerName",
 		Parent = topInfo,
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0, 0, 0, 0),
-		Size = UDim2.new(1, -68, 0, 24),
+		Size = UDim2.new(1, -74, 0, 24),
 		Font = Enum.Font.RobotoMono,
 		Text = "No target",
 		TextColor3 = theme.Text,
-		TextSize = 18,
+		TextSize = 17,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
@@ -450,8 +536,8 @@ function OpponentInfo:_buildGui()
 		Name = "Status",
 		Parent = topInfo,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, 0, 24),
-		Size = UDim2.new(1, -68, 0, 18),
+		Position = UDim2.new(0, 0, 0, 25),
+		Size = UDim2.new(1, -74, 0, 18),
 		Font = Enum.Font.RobotoMono,
 		Text = "Waiting for tracked player",
 		TextColor3 = theme.SubText,
@@ -464,8 +550,8 @@ function OpponentInfo:_buildGui()
 		Name = "ArenaText",
 		Parent = topInfo,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, 0, 42),
-		Size = UDim2.new(1, -68, 0, 16),
+		Position = UDim2.new(0, 0, 0, 45),
+		Size = UDim2.new(1, -74, 0, 16),
 		Font = Enum.Font.RobotoMono,
 		Text = "Arena: -",
 		TextColor3 = theme.Muted,
@@ -474,12 +560,27 @@ function OpponentInfo:_buildGui()
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
 
+	self.Avatar = newInstance("ImageLabel", {
+		Name = "Avatar",
+		Parent = topInfo,
+		BackgroundColor3 = theme.Background2,
+		BorderSizePixel = 0,
+		Position = UDim2.new(1, -62, 0, 0),
+		Size = UDim2.new(0, 62, 0, 62),
+		Image = "",
+		BackgroundTransparency = 0,
+	})
+
+	addCorner(self.Avatar, 8)
+	addStroke(self.Avatar, theme.Stroke, 1, 0)
+	addStroke(self.Avatar, theme.StrokeDark, 1, 0.45)
+
 	local healthHolder = newInstance("Frame", {
 		Name = "HealthHolder",
 		Parent = self.Root,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 10, 0, 114),
-		Size = UDim2.new(1, -20, 0, 28),
+		Position = UDim2.new(0, 12, 0, 128),
+		Size = UDim2.new(1, -24, 0, 28),
 	})
 
 	self.HealthText = newInstance("TextLabel", {
@@ -504,106 +605,102 @@ function OpponentInfo:_buildGui()
 		Size = UDim2.new(1, 0, 0, 10),
 	})
 
-	addCorner(self.HealthBarBg, 99)
-	addStroke(self.HealthBarBg, theme.StrokeDark, 1, 0.5)
+	addCorner(self.HealthBarBg, 999)
+	addStroke(self.HealthBarBg, theme.StrokeDark, 1, 0.45)
 
 	self.HealthBar = newInstance("Frame", {
 		Name = "HealthBar",
 		Parent = self.HealthBarBg,
-		BackgroundColor3 = theme.HealthGood,
+		BackgroundColor3 = theme.HealthBad,
 		BorderSizePixel = 0,
 		Position = UDim2.new(0, 0, 0, 0),
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.new(0, 0, 1, 0),
 	})
 
-	addCorner(self.HealthBar, 99)
-	addGradient(self.HealthBar, ColorSequence.new({
-		ColorSequenceKeypoint.new(0, theme.Accent),
-		ColorSequenceKeypoint.new(1, theme.Accent2),
-	}), 0)
+	addCorner(self.HealthBar, 999)
 
-	local slotsHolder = newInstance("Frame", {
+	self.SlotsHolder = newInstance("Frame", {
 		Name = "SlotsHolder",
 		Parent = self.Root,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 10, 0, 152),
-		Size = UDim2.new(1, -20, 1, -162),
+		Position = UDim2.new(0, 12, 0, 168),
+		Size = UDim2.new(1, -24, 0, 140),
 	})
 
-	local layout = newInstance("UIGridLayout", {
-		Parent = slotsHolder,
-		CellPadding = UDim2.new(0, 8, 0, 8),
-		CellSize = UDim2.new(0, 164, 0, 72),
+	local slotsGrid = newInstance("UIGridLayout", {
+		Parent = self.SlotsHolder,
+		FillDirection = Enum.FillDirection.Horizontal,
 		FillDirectionMaxCells = 2,
+		CellPadding = UDim2.new(0, 8, 0, 8),
+		CellSize = UDim2.new(0.5, -4, 0, 66),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	})
 
 	self.Slots = {}
 
-	for index, slotName in ipairs(SLOT_ORDER) do
-		local card = newInstance("Frame", {
-			Name = slotName,
-			Parent = slotsHolder,
+	local function createWeaponSlot(parent, order, title)
+		local slot = newInstance("Frame", {
+			Name = title,
+			Parent = parent,
+			LayoutOrder = order,
 			BackgroundColor3 = theme.SlotBg,
 			BorderSizePixel = 0,
-			LayoutOrder = index,
 		})
 
-		addCorner(card, 6)
-		addStroke(card, theme.Stroke, 1, 0)
-		addStroke(card, theme.StrokeDark, 1, 0.5)
-		addGradient(card, ColorSequence.new({
+		addCorner(slot, 8)
+		addStroke(slot, theme.Stroke, 1, 0.1)
+		addStroke(slot, theme.StrokeDark, 1, 0.45)
+		addGradient(slot, ColorSequence.new({
 			ColorSequenceKeypoint.new(0, theme.SlotBg2),
 			ColorSequenceKeypoint.new(1, theme.SlotBg),
 		}), -90)
 
-		local image = newInstance("ImageLabel", {
-			Name = "Image",
-			Parent = card,
+		local icon = newInstance("ImageLabel", {
+			Name = "Icon",
+			Parent = slot,
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 6, 0.5, -26),
-			Size = UDim2.new(0, 52, 0, 52),
+			Position = UDim2.new(0, 8, 0.5, -20),
+			Size = UDim2.new(0, 40, 0, 40),
 			Image = "",
 			ScaleType = Enum.ScaleType.Crop,
 		})
 
-		addCorner(image, 6)
+		addCorner(icon, 6)
 
 		local slotLabel = newInstance("TextLabel", {
 			Name = "SlotLabel",
-			Parent = card,
+			Parent = slot,
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 64, 0, 5),
-			Size = UDim2.new(1, -70, 0, 14),
+			Position = UDim2.new(0, 56, 0, 6),
+			Size = UDim2.new(1, -64, 0, 12),
 			Font = Enum.Font.RobotoMono,
-			Text = slotName,
+			Text = title,
 			TextColor3 = theme.Muted,
-			TextSize = 11,
+			TextSize = 10,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 
-		local weaponLabel = newInstance("TextLabel", {
-			Name = "WeaponLabel",
-			Parent = card,
+		local weaponName = newInstance("TextLabel", {
+			Name = "WeaponName",
+			Parent = slot,
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 64, 0, 18),
-			Size = UDim2.new(1, -70, 0, 20),
+			Position = UDim2.new(0, 56, 0, 18),
+			Size = UDim2.new(1, -64, 0, 18),
 			Font = Enum.Font.RobotoMono,
 			Text = "Empty",
 			TextColor3 = theme.Text,
 			TextSize = 13,
-			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			TextYAlignment = Enum.TextYAlignment.Top,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 
-		local subLabel = newInstance("TextLabel", {
-			Name = "SubLabel",
-			Parent = card,
+		local sub = newInstance("TextLabel", {
+			Name = "Sub",
+			Parent = slot,
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 64, 1, -18),
-			Size = UDim2.new(1, -70, 0, 14),
+			Position = UDim2.new(0, 56, 1, -18),
+			Size = UDim2.new(1, -64, 0, 12),
 			Font = Enum.Font.RobotoMono,
 			Text = "-",
 			TextColor3 = theme.SubText,
@@ -612,20 +709,21 @@ function OpponentInfo:_buildGui()
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 
-		self.Slots[slotName] = {
-			Card = card,
-			Image = image,
+		return {
+			Card = slot,
+			Icon = icon,
 			SlotLabel = slotLabel,
-			WeaponLabel = weaponLabel,
-			SubLabel = subLabel,
+			WeaponName = weaponName,
+			Sub = sub,
 		}
 	end
-end
 
-function OpponentInfo:_connect(signal, callback)
-	local connection = signal:Connect(callback)
-	table.insert(self._connections, connection)
-	return connection
+	self.Slots.Primary = createWeaponSlot(self.SlotsHolder, 1, "Primary")
+	self.Slots.Secondary = createWeaponSlot(self.SlotsHolder, 2, "Secondary")
+	self.Slots.Melee = createWeaponSlot(self.SlotsHolder, 3, "Melee")
+	self.Slots.Utility = createWeaponSlot(self.SlotsHolder, 4, "Utility")
+
+	makeDraggableSmooth(self.Header, self.Root)
 end
 
 function OpponentInfo:_connectLoop()
@@ -644,31 +742,22 @@ function OpponentInfo:_connectLoop()
 	end)
 end
 
-function OpponentInfo:_disconnectAll()
-	for _, connection in ipairs(self._connections) do
-		pcall(function()
-			connection:Disconnect()
-		end)
-	end
-	table.clear(self._connections)
-end
-
 function OpponentInfo:_getArenaDescriptor(model)
-	if not model or not ARENA_NAMES[model.Name] then
+	if not model or not model:IsA("Model") or not ARENA_NAMES[model.Name] then
 		return nil
 	end
 
-	local spawns = safeFindChild(model, "Spawns")
+	local spawns = model:FindFirstChild("Spawns")
 	if not spawns then
 		return nil
 	end
 
-	local side1 = safeFindChild(spawns, "1")
-	local side2 = safeFindChild(spawns, "2")
-	local part1 = side1 and safeFindChild(side1, "Part") or nil
-	local part2 = side2 and safeFindChild(side2, "Part") or nil
+	local side1 = spawns:FindFirstChild("1")
+	local side2 = spawns:FindFirstChild("2")
+	local part1 = side1 and side1:FindFirstChild("Part")
+	local part2 = side2 and side2:FindFirstChild("Part")
 
-	if not part1 or not part2 then
+	if not (part1 and part2 and part1:IsA("BasePart") and part2:IsA("BasePart")) then
 		return nil
 	end
 
@@ -680,19 +769,17 @@ function OpponentInfo:_getArenaDescriptor(model)
 	}
 end
 
-function OpponentInfo:_getArenaModels()
-	local list = {}
+function OpponentInfo:_getAllArenaDescriptors()
+	local result = {}
 
 	for _, child in ipairs(Workspace:GetChildren()) do
-		if child:IsA("Model") and ARENA_NAMES[child.Name] then
-			local descriptor = self:_getArenaDescriptor(child)
-			if descriptor then
-				table.insert(list, descriptor)
-			end
+		local descriptor = self:_getArenaDescriptor(child)
+		if descriptor then
+			table.insert(result, descriptor)
 		end
 	end
 
-	return list
+	return result
 end
 
 function OpponentInfo:_pointInsideModelBounds(model, position)
@@ -714,58 +801,45 @@ end
 
 function OpponentInfo:_findArenaForPosition(position)
 	local best = nil
+	local spawnAttachDistance = self.Config.Auto.SpawnAttachDistance or 95
 
-	for _, arena in ipairs(self:_getArenaModels()) do
+	for _, arena in ipairs(self:_getAllArenaDescriptors()) do
 		local d1 = (position - arena.Spawn1.Position).Magnitude
 		local d2 = (position - arena.Spawn2.Position).Magnitude
 		local minDistance = math.min(d1, d2)
-		local nearestSpawnIndex = d1 <= d2 and 1 or 2
+		local nearestSide = d1 <= d2 and 1 or 2
 		local insideBounds = self:_pointInsideModelBounds(arena.Model, position)
 
-		local candidate = {
-			Model = arena.Model,
-			Name = arena.Name,
-			Spawn1 = arena.Spawn1,
-			Spawn2 = arena.Spawn2,
-			DistanceToNearestSpawn = minDistance,
-			NearestSpawnIndex = nearestSpawnIndex,
-			InsideBounds = insideBounds,
-		}
+		if insideBounds or minDistance <= spawnAttachDistance then
+			local candidate = {
+				Model = arena.Model,
+				Name = arena.Name,
+				Spawn1 = arena.Spawn1,
+				Spawn2 = arena.Spawn2,
+				Spawn1Distance = d1,
+				Spawn2Distance = d2,
+				DistanceToNearestSpawn = minDistance,
+				NearestSpawnIndex = nearestSide,
+				InsideBounds = insideBounds,
+			}
 
-		if not best then
-			best = candidate
-		else
-			if candidate.InsideBounds and not best.InsideBounds then
+			if not best then
 				best = candidate
-			elseif candidate.InsideBounds == best.InsideBounds and candidate.DistanceToNearestSpawn < best.DistanceToNearestSpawn then
-				best = candidate
+			else
+				if candidate.InsideBounds and not best.InsideBounds then
+					best = candidate
+				elseif candidate.InsideBounds == best.InsideBounds and candidate.DistanceToNearestSpawn < best.DistanceToNearestSpawn then
+					best = candidate
+				end
 			end
 		end
 	end
 
-	return best
-end
-
-function OpponentInfo:_getPlayerArenaInfo(player)
-	if not player or not player.Character then
-		return nil
+	if best and best.DistanceToNearestSpawn <= (self.Config.Auto.MaxArenaDistance or math.huge) then
+		return best
 	end
 
-	local root = getRoot(player.Character)
-	if not root then
-		return nil
-	end
-
-	local arenaInfo = self:_findArenaForPosition(root.Position)
-	if not arenaInfo then
-		return nil
-	end
-
-	if arenaInfo.DistanceToNearestSpawn > (self.Config.Auto.MaxArenaDistance or math.huge) then
-		return nil
-	end
-
-	return arenaInfo
+	return nil
 end
 
 function OpponentInfo:_resolvePlayer(target)
@@ -793,8 +867,15 @@ end
 function OpponentInfo:_setAvatarForPlayer(player)
 	if not player or not player.UserId then
 		self.Avatar.Image = ""
+		self._avatarUserId = nil
 		return
 	end
+
+	if self._avatarUserId == player.UserId then
+		return
+	end
+
+	self._avatarUserId = player.UserId
 
 	local ok, content = pcall(function()
 		return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
@@ -802,6 +883,8 @@ function OpponentInfo:_setAvatarForPlayer(player)
 
 	if ok then
 		self.Avatar.Image = content
+	else
+		self.Avatar.Image = ""
 	end
 end
 
@@ -829,17 +912,17 @@ function OpponentInfo:_getWeaponAsset(weaponName)
 
 	local url = WEAPON_URL_BY_NAME[weaponName]
 	if not url then
-		self._assetCache[weaponName] = nil
+		self._assetCache[weaponName] = false
 		return nil
 	end
 
 	if not (REQUEST_FUNCTION and GET_ASSET_FUNCTION and writefile and isfile) then
-		self._assetCache[weaponName] = nil
+		self._assetCache[weaponName] = false
 		return nil
 	end
 
 	if not self:_ensureAssetFolder() then
-		self._assetCache[weaponName] = nil
+		self._assetCache[weaponName] = false
 		return nil
 	end
 
@@ -855,7 +938,7 @@ function OpponentInfo:_getWeaponAsset(weaponName)
 		end)
 
 		if not ok or not response or not response.Body then
-			self._assetCache[weaponName] = nil
+			self._assetCache[weaponName] = false
 			return nil
 		end
 
@@ -864,7 +947,7 @@ function OpponentInfo:_getWeaponAsset(weaponName)
 		end)
 
 		if not writeOk then
-			self._assetCache[weaponName] = nil
+			self._assetCache[weaponName] = false
 			return nil
 		end
 	end
@@ -874,7 +957,7 @@ function OpponentInfo:_getWeaponAsset(weaponName)
 	end)
 
 	if not ok then
-		self._assetCache[weaponName] = nil
+		self._assetCache[weaponName] = false
 		return nil
 	end
 
@@ -888,11 +971,12 @@ function OpponentInfo:_collectWeaponModelsFromContainer(container, playerName, i
 	end
 
 	for _, child in ipairs(container:GetChildren()) do
-		local parsedPlayerName, weaponName, skinName = parseViewModelName(child.Name)
-		if parsedPlayerName == playerName and weaponName and WEAPON_SLOT_BY_NAME[weaponName] then
+		local modelPlayerName, weaponName, skinName = parseViewModelName(child.Name)
+		if modelPlayerName == playerName and weaponName and WEAPON_SLOT_BY_NAME[weaponName] then
 			local slotName = WEAPON_SLOT_BY_NAME[weaponName]
+			local existing = output[slotName]
 
-			if not output[slotName] or (inHand and not output[slotName].InHand) then
+			if not existing or (inHand and not existing.InHand) then
 				output[slotName] = {
 					WeaponName = weaponName,
 					SkinName = skinName,
@@ -906,9 +990,23 @@ function OpponentInfo:_collectWeaponModelsFromContainer(container, playerName, i
 end
 
 function OpponentInfo:_resolveLoadoutForPlayer(playerName)
-	local loadout = {}
+	local loadout = {
+		Primary = nil,
+		Secondary = nil,
+		Melee = nil,
+		Utility = nil,
+	}
 
-	local workspaceViewModels = safeFindChild(Workspace, "ViewModels")
+	if not self._trackedPlayer then
+		return loadout
+	end
+
+	local valid = self:IsTrackedPlayerInCurrentMatch()
+	if not valid then
+		return loadout
+	end
+
+	local workspaceViewModels = Workspace:FindFirstChild("ViewModels")
 	self:_collectWeaponModelsFromContainer(workspaceViewModels, playerName, true, loadout)
 
 	local tempRoot = ReplicatedStorage:FindFirstChild("Assets")
@@ -929,40 +1027,40 @@ function OpponentInfo:_setSlotVisual(slotName, weaponData)
 
 	if not weaponData then
 		slot.Card.BackgroundColor3 = theme.SlotBg
-		slot.WeaponLabel.Text = "Empty"
-		slot.SubLabel.Text = "-"
-		slot.Image.Image = ""
+		slot.WeaponName.Text = "Empty"
+		slot.Sub.Text = "-"
+		slot.Icon.Image = ""
 		return
 	end
 
 	slot.Card.BackgroundColor3 = weaponData.InHand and theme.SlotEquipped or theme.SlotBg
-	slot.WeaponLabel.Text = weaponData.WeaponName or "Unknown"
+	slot.WeaponName.Text = weaponData.WeaponName or "Unknown"
 
 	if weaponData.SkinName and weaponData.SkinName ~= "" then
-		slot.SubLabel.Text = weaponData.InHand and ("In hand • " .. weaponData.SkinName) or weaponData.SkinName
+		slot.Sub.Text = weaponData.InHand and ("In hand • " .. weaponData.SkinName) or weaponData.SkinName
 	else
-		slot.SubLabel.Text = weaponData.InHand and "In hand" or "Equipped"
+		slot.Sub.Text = weaponData.InHand and "In hand" or "Equipped"
 	end
 
 	local asset = self:_getWeaponAsset(weaponData.WeaponName)
 	if asset then
-		slot.Image.Image = asset
+		slot.Icon.Image = asset
 	else
-		slot.Image.Image = ""
+		slot.Icon.Image = ""
 	end
 end
 
-function OpponentInfo:_setNoTargetState()
-	local theme = self.Config.Theme
+function OpponentInfo:_setNoTargetState(message)
 	self.PlayerName.Text = "No target"
-	self.Status.Text = "Waiting for tracked player"
+	self.Status.Text = message or "Waiting for tracked player"
 	self.ArenaText.Text = "Arena: -"
 	self.HealthText.Text = "HP: 0 / 0"
 	self.Avatar.Image = ""
+	self._avatarUserId = nil
 
-	tween(self.HealthBar, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	tween(self.HealthBar, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0, 0, 1, 0),
-		BackgroundColor3 = theme.HealthBad,
+		BackgroundColor3 = self.Config.Theme.HealthBad,
 	})
 
 	for _, slotName in ipairs(SLOT_ORDER) do
@@ -970,41 +1068,89 @@ function OpponentInfo:_setNoTargetState()
 	end
 end
 
+function OpponentInfo:GetLocalArenaInfo()
+	local localCharacter = LocalPlayer and LocalPlayer.Character
+	if not localCharacter or not isAliveCharacter(localCharacter) then
+		return nil
+	end
+
+	local root = getRoot(localCharacter)
+	if not root then
+		return nil
+	end
+
+	return self:_findArenaForPosition(root.Position)
+end
+
+function OpponentInfo:GetPlayerArenaInfo(player)
+	if not player or not player.Character or not isAliveCharacter(player.Character) then
+		return nil
+	end
+
+	local root = getRoot(player.Character)
+	if not root then
+		return nil
+	end
+
+	return self:_findArenaForPosition(root.Position)
+end
+
+function OpponentInfo:IsTrackedPlayerInCurrentMatch()
+	if not self._trackedPlayer or self._trackedPlayer == LocalPlayer then
+		return false
+	end
+
+	local localArena = self:GetLocalArenaInfo()
+	local targetArena = self:GetPlayerArenaInfo(self._trackedPlayer)
+
+	if not localArena or not targetArena then
+		return false
+	end
+
+	if localArena.Model ~= targetArena.Model then
+		return false
+	end
+
+	if self.Config.Auto.PreferOppositeSpawn and localArena.NearestSpawnIndex == targetArena.NearestSpawnIndex then
+		return false
+	end
+
+	return true, localArena, targetArena
+end
+
 function OpponentInfo:_updateWindowForPlayer(player, character)
-	local theme = self.Config.Theme
 	local humanoid = getHumanoid(character)
 	local root = getRoot(character)
 
 	if not humanoid or not root then
-		self:_setNoTargetState()
+		self:_setNoTargetState("Target not alive / no character")
 		return
 	end
 
 	self.PlayerName.Text = player.Name
+	self.Status.Text = "Tracking target"
 
-	local arenaInfo = self:_findArenaForPosition(root.Position)
-	if arenaInfo then
-		self.ArenaText.Text = string.format("Arena: %s | Side: %s", arenaInfo.Name, tostring(arenaInfo.NearestSpawnIndex))
+	local trackedArena = self:_findArenaForPosition(root.Position)
+	if trackedArena then
+		self.ArenaText.Text = string.format("Arena: %s | Side: %s", trackedArena.Name, tostring(trackedArena.NearestSpawnIndex))
 	else
 		self.ArenaText.Text = "Arena: -"
 	end
 
-	self.Status.Text = character == player.Character and "Tracking live character" or "Tracking"
 	self:_setAvatarForPlayer(player)
 
-	local maxHealth = math.max(1, humanoid.MaxHealth)
-	local hp = math.max(0, humanoid.Health)
-	local percent = math.clamp(hp / maxHealth, 0, 1)
+	local maxHealth = math.max(humanoid.MaxHealth, 1)
+	local hp = math.max(humanoid.Health, 0)
+	local alpha = math.clamp(hp / maxHealth, 0, 1)
 
 	self.HealthText.Text = string.format("HP: %d / %d", math.floor(hp + 0.5), math.floor(maxHealth + 0.5))
 
 	tween(self.HealthBar, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Size = UDim2.new(percent, 0, 1, 0),
-		BackgroundColor3 = getHealthColor(theme, percent),
+		Size = UDim2.new(alpha, 0, 1, 0),
+		BackgroundColor3 = getHealthColor(self.Config.Theme, alpha),
 	})
 
 	local loadout = self:_resolveLoadoutForPlayer(player.Name)
-
 	for _, slotName in ipairs(SLOT_ORDER) do
 		self:_setSlotVisual(slotName, loadout[slotName])
 	end
@@ -1026,13 +1172,35 @@ function OpponentInfo:_update()
 		return
 	end
 
+	local validMatch = self:IsTrackedPlayerInCurrentMatch()
+	if not validMatch then
+		self._trackedCharacter = nil
+
+		if self.Config.Tracking.ClearInvalidTarget then
+			self:ClearTrackedPlayer()
+		end
+
+		self:_setNoTargetState("Tracked player is not in your current match")
+		return
+	end
+
 	local character = self._trackedPlayer.Character
+	self._trackedCharacter = character
+
 	if not character or not isAliveCharacter(character) then
-		self._trackedCharacter = character
 		self.PlayerName.Text = self._trackedPlayer.Name
 		self.Status.Text = "Target not alive / no character"
-		self.ArenaText.Text = "Arena: -"
+
+		local targetArena = self:GetPlayerArenaInfo(self._trackedPlayer)
+		if targetArena then
+			self.ArenaText.Text = string.format("Arena: %s | Side: %s", targetArena.Name, tostring(targetArena.NearestSpawnIndex))
+		else
+			self.ArenaText.Text = "Arena: -"
+		end
+
 		self.HealthText.Text = "HP: 0 / 0"
+		self:_setAvatarForPlayer(self._trackedPlayer)
+
 		tween(self.HealthBar, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Size = UDim2.new(0, 0, 1, 0),
 			BackgroundColor3 = self.Config.Theme.HealthBad,
@@ -1046,7 +1214,6 @@ function OpponentInfo:_update()
 		return
 	end
 
-	self._trackedCharacter = character
 	self:_updateWindowForPlayer(self._trackedPlayer, character)
 end
 
@@ -1092,7 +1259,7 @@ end
 
 function OpponentInfo:TrackPlayer(target)
 	local player = self:_resolvePlayer(target)
-	if not player then
+	if not player or player == LocalPlayer then
 		return nil
 	end
 
@@ -1101,6 +1268,7 @@ function OpponentInfo:TrackPlayer(target)
 	self._trackedName = player.Name
 	self:_setAvatarForPlayer(player)
 	self:_update()
+
 	return player
 end
 
@@ -1145,7 +1313,7 @@ function OpponentInfo:Refresh()
 end
 
 function OpponentInfo:FindOpponentCandidate()
-	local localCharacter = LocalPlayer.Character
+	local localCharacter = LocalPlayer and LocalPlayer.Character
 	if not localCharacter or not isAliveCharacter(localCharacter) then
 		return nil, nil
 	end
@@ -1155,8 +1323,8 @@ function OpponentInfo:FindOpponentCandidate()
 		return nil, nil
 	end
 
-	local localArenaInfo = self:_findArenaForPosition(localRoot.Position)
-	if not localArenaInfo then
+	local localArena = self:GetLocalArenaInfo()
+	if not localArena then
 		return nil, nil
 	end
 
@@ -1166,28 +1334,24 @@ function OpponentInfo:FindOpponentCandidate()
 
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer and player.Character and isAliveCharacter(player.Character) then
-			local candidateRoot = getRoot(player.Character)
-			if candidateRoot then
-				local candidateArenaInfo = self:_findArenaForPosition(candidateRoot.Position)
-
-				if candidateArenaInfo and candidateArenaInfo.Model == localArenaInfo.Model then
-					local distanceToLocal = (candidateRoot.Position - localRoot.Position).Magnitude
+			local playerRoot = getRoot(player.Character)
+			if playerRoot then
+				local candidateArena = self:GetPlayerArenaInfo(player)
+				if candidateArena and candidateArena.Model == localArena.Model then
 					local sameSidePenalty = 0
-
-					if self.Config.Auto.PreferOppositeSpawn then
-						if candidateArenaInfo.NearestSpawnIndex == localArenaInfo.NearestSpawnIndex then
-							sameSidePenalty = 500
-						end
+					if self.Config.Auto.PreferOppositeSpawn and candidateArena.NearestSpawnIndex == localArena.NearestSpawnIndex then
+						sameSidePenalty = 500
 					end
 
-					local score = distanceToLocal + sameSidePenalty + (candidateArenaInfo.DistanceToNearestSpawn * 0.15)
+					local distanceToLocal = (playerRoot.Position - localRoot.Position).Magnitude
+					local score = distanceToLocal + sameSidePenalty + (candidateArena.DistanceToNearestSpawn * 0.15)
 
 					if score < bestScore then
 						bestScore = score
 						bestPlayer = player
 						bestMeta = {
-							LocalArena = localArenaInfo,
-							CandidateArena = candidateArenaInfo,
+							LocalArena = localArena,
+							CandidateArena = candidateArena,
 							Distance = distanceToLocal,
 							Score = score,
 						}
@@ -1220,6 +1384,7 @@ function OpponentInfo:Destroy()
 	self._trackedPlayer = nil
 	self._trackedCharacter = nil
 	self._trackedName = nil
+	self._avatarUserId = nil
 
 	return nil
 end
