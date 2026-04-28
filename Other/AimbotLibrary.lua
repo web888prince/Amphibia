@@ -27,16 +27,16 @@ local DEFAULT_CONFIG = {
 		TargetingPart = "Head",
 		AimOffset = Vector3.new(0, 0, 0),
 
-		Smoothness = 0.05,
+		Smoothness = 0,
 		AimStrength = 1,
 
-		MaxDistance = 1000,
+		MaxDistance = 99999,
 		MinDistance = 0,
 
 		FovColor = Color3.fromRGB(255, 255, 255),
-		FovRadius = 180,
+		FovRadius = 260,
 		FovVisible = true,
-		FovPosition = "Center", -- "Center" / "Mouse"
+		FovPosition = "Center",
 
 		RequireAlive = true,
 		RequireCharacterInWorkspace = true,
@@ -48,10 +48,16 @@ local DEFAULT_CONFIG = {
 
 		AllowUserRetarget = true,
 		RetargetEveryFrame = true,
-		SwitchMargin = 6,
-		LoseTargetOutsideFov = true,
 
-		RenderPriority = 10000,
+		-- Теперь это отвечает только за авто-переключение между целями.
+		-- ManualRetarget ниже отвечает за лёгкое переключение мышкой.
+		SwitchMargin = 6,
+
+		-- false = FOV только для захвата цели.
+		-- После захвата цель сопровождается даже если выбежала из круга.
+		LoseTargetOutsideFov = false,
+
+		RenderPriority = 999999,
 		RenderName = "AmphibiaAimbotRender",
 
 		UsePlayersService = true,
@@ -59,54 +65,64 @@ local DEFAULT_CONFIG = {
 		WorkspaceScan = {
 			Enabled = true,
 			DeepScan = true,
-			RefreshRate = 0.25,
+			RefreshRate = 0.35,
 			MaxScannedInstances = 4000,
 		},
 
 		WallCheck = {
-			Enabled = true,
+			Enabled = false,
 			IgnoreTransparent = true,
 			TransparencyThreshold = 0.95,
-			IgnoreNonCollidable = false,
+			IgnoreNonCollidable = true,
 			MaxPierces = 8,
 		},
 
 		Prediction = {
-			Enabled = true,
-
-			-- "Fixed" / "DistanceBased"
+			Enabled = false,
 			Mode = "Fixed",
-
-			-- Good start for hitscan-like guns.
-			Time = 0.08,
-
-			-- Used only when Mode = "DistanceBased".
+			Time = 0.04,
 			ProjectileSpeed = 900,
-
-			MaxTime = 0.16,
-
-			-- Smooths predicted point so aim does not shake.
-			PositionSmoothing = 0.12,
+			MaxTime = 0.1,
+			PositionSmoothing = 0,
 		},
 
 		LostTarget = {
-			Enabled = true,
-
-			-- How long camera keeps aiming at last tracked point.
-			HoldTime = 0.35,
-
-			ReturnStrength = 0.85,
-			ReturnSmoothness = 0.1,
-
+			Enabled = false,
+			HoldTime = 0.25,
+			ReturnStrength = 0.7,
+			ReturnSmoothness = 0.12,
 			ClearAfterHold = true,
 		},
 
+		-- Старый MouseOverride лучше держать выключенным,
+		-- потому что он может создавать тряску.
 		MouseOverride = {
+			Enabled = false,
+			Threshold = 999,
+			MinAimStrength = 1,
+			RecoverySpeed = 0,
+			RetargetOnInput = false,
+		},
+
+		-- Новый нормальный retarget.
+		-- Он не пытается смешивать аим и мышку одновременно.
+		-- Он просто на короткий момент отпускает аим, когда ты двигаешь мышкой.
+		ManualRetarget = {
 			Enabled = true,
-			Threshold = 1.25,
-			MinAimStrength = 0.15,
-			RecoverySpeed = 9,
-			RetargetOnInput = true,
+
+			-- Чем меньше, тем легче сорвать текущую цель мышкой.
+			-- 0.05-0.12 = легко.
+			-- 0.2+ = нужно двигать сильнее.
+			Threshold = 0.08,
+
+			-- На сколько секунд аим отпускает камеру после движения мышкой.
+			BreakTime = 0.13,
+
+			-- Чистим текущую цель, чтобы после движения мышкой выбрать новую.
+			ClearCurrentTarget = true,
+
+			-- Чистим last tracked, чтобы камера не возвращалась в старую точку.
+			ClearLastTracked = true,
 		},
 	},
 
@@ -222,6 +238,9 @@ function AmphibiaAimbot.new(config)
 
 	self.MouseOverrideAlpha = 0
 	self.LastMouseDelta = Vector2.zero
+
+	self.ManualRetargetUntil = 0
+	self.LastManualRetargetInput = 0
 
 	self.CachedCandidates = {}
 	self.LastCandidateRefresh = 0
@@ -425,7 +444,7 @@ function AmphibiaAimbot:GetTargetPosition(character, targetPart)
 		return basePosition
 	end
 
-	local predictionTime = prediction.Time or 0.08
+	local predictionTime = prediction.Time or 0.04
 
 	if prediction.Mode == "DistanceBased" and self.Camera then
 		local distance = (basePosition - self.Camera.CFrame.Position).Magnitude
@@ -436,7 +455,7 @@ function AmphibiaAimbot:GetTargetPosition(character, targetPart)
 		end
 	end
 
-	predictionTime = math.clamp(predictionTime, 0, prediction.MaxTime or 0.16)
+	predictionTime = math.clamp(predictionTime, 0, prediction.MaxTime or 0.1)
 
 	return basePosition + velocity * predictionTime
 end
@@ -569,7 +588,7 @@ end
 function AmphibiaAimbot:RefreshCandidates(force)
 	local now = os.clock()
 	local scanSettings = self.Config.AimbotSetting.WorkspaceScan
-	local refreshRate = 0.25
+	local refreshRate = 0.35
 
 	if scanSettings and scanSettings.RefreshRate then
 		refreshRate = scanSettings.RefreshRate
@@ -787,7 +806,11 @@ end
 
 --// Target Validation
 
-function AmphibiaAimbot:IsValidPlayerTarget(player)
+function AmphibiaAimbot:IsValidPlayerTarget(player, options)
+	options = options or {}
+
+	local ignoreFov = options.IgnoreFov == true
+
 	if not isPlayer(player) then
 		return false
 	end
@@ -832,10 +855,12 @@ function AmphibiaAimbot:IsValidPlayerTarget(player)
 		return false
 	end
 
-	local insideFov = self:IsWorldPositionInsideFov(targetPosition)
+	if not ignoreFov then
+		local insideFov = self:IsWorldPositionInsideFov(targetPosition)
 
-	if not insideFov then
-		return false
+		if not insideFov then
+			return false
+		end
 	end
 
 	if not self:IsVisible(character, targetPart, targetPosition) then
@@ -845,8 +870,14 @@ function AmphibiaAimbot:IsValidPlayerTarget(player)
 	return true
 end
 
-function AmphibiaAimbot:GetTargetData(player)
-	if not self:IsValidPlayerTarget(player) then
+function AmphibiaAimbot:GetTargetData(player, options)
+	options = options or {}
+
+	local ignoreFov = options.IgnoreFov == true
+
+	if not self:IsValidPlayerTarget(player, {
+		IgnoreFov = ignoreFov,
+	}) then
 		return nil
 	end
 
@@ -868,9 +899,14 @@ function AmphibiaAimbot:GetTargetData(player)
 		return nil
 	end
 
-	local insideFov, fovDistance = self:IsWorldPositionInsideFov(targetPosition)
+	local fovDistance = self:GetFovDistance(targetPosition)
+	local insideFov = false
 
-	if not insideFov or not fovDistance then
+	if fovDistance then
+		insideFov = fovDistance <= self.Config.AimbotSetting.FovRadius
+	end
+
+	if not ignoreFov and not insideFov then
 		return nil
 	end
 
@@ -881,8 +917,9 @@ function AmphibiaAimbot:GetTargetData(player)
 		Character = character,
 		Part = targetPart,
 		Position = targetPosition,
-		FovDistance = fovDistance,
+		FovDistance = fovDistance or math.huge,
 		WorldDistance = worldDistance or math.huge,
+		InsideFov = insideFov,
 	}
 end
 
@@ -896,7 +933,9 @@ function AmphibiaAimbot:GetClosestPlayerInFov()
 		local player = candidate.Player
 
 		if isPlayer(player) then
-			local data = self:GetTargetData(player)
+			local data = self:GetTargetData(player, {
+				IgnoreFov = false,
+			})
 
 			if data and data.FovDistance < closestFovDistance then
 				closestData = data
@@ -917,12 +956,16 @@ function AmphibiaAimbot:GetCurrentTargetData()
 		return nil
 	end
 
-	return self:GetTargetData(self.CurrentTargetPlayer)
+	local ignoreFov = self.Config.AimbotSetting.LoseTargetOutsideFov == false
+
+	return self:GetTargetData(self.CurrentTargetPlayer, {
+		IgnoreFov = ignoreFov,
+	})
 end
 
 function AmphibiaAimbot:SetCurrentTargetFromData(data)
 	if not data then
-		self:ClearTarget()
+		self:ClearTarget(false)
 		return
 	end
 
@@ -948,19 +991,24 @@ function AmphibiaAimbot:SaveLastTrackedPoint(position, targetPart)
 	end
 end
 
+function AmphibiaAimbot:ClearLastTracked()
+	self.LastTrackedPosition = nil
+	self.LastTrackedVelocity = Vector3.zero
+	self.LastTrackedTime = 0
+	self.LostTargetStartedAt = nil
+end
+
 function AmphibiaAimbot:EnterLostTargetState()
 	local lost = self.Config.AimbotSetting.LostTarget
 
 	if not lost or not lost.Enabled then
-		self:ClearTarget()
-		self.LastTrackedPosition = nil
-		self.LastTrackedVelocity = Vector3.zero
-		self.LostTargetStartedAt = nil
+		self:ClearTarget(false)
+		self:ClearLastTracked()
 		return
 	end
 
 	if not self.LastTrackedPosition then
-		self:ClearTarget()
+		self:ClearTarget(false)
 		return
 	end
 
@@ -986,26 +1034,52 @@ function AmphibiaAimbot:GetLastTrackedAimPosition()
 	end
 
 	local elapsed = os.clock() - self.LostTargetStartedAt
-	local holdTime = lost.HoldTime or 0.35
+	local holdTime = lost.HoldTime or 0.25
 
 	if elapsed > holdTime then
 		if lost.ClearAfterHold then
-			self.LastTrackedPosition = nil
-			self.LastTrackedVelocity = Vector3.zero
-			self.LostTargetStartedAt = nil
+			self:ClearLastTracked()
 			self.SmoothedAimPosition = nil
 		end
 
 		return nil
 	end
 
-	local projectedPosition = self.LastTrackedPosition + self.LastTrackedVelocity * math.min(elapsed, 0.15)
-
-	return projectedPosition
+	return self.LastTrackedPosition + self.LastTrackedVelocity * math.min(elapsed, 0.15)
 end
 
 function AmphibiaAimbot:SelectTarget()
 	local settings = self.Config.AimbotSetting
+
+	local currentData = self:GetCurrentTargetData()
+
+	if currentData and settings.LoseTargetOutsideFov == false then
+		local bestPlayer, bestCharacter, bestPart, bestPosition, bestFovDistance = self:GetClosestPlayerInFov()
+
+		if not settings.RetargetEveryFrame or not settings.AllowUserRetarget then
+			self:SetCurrentTargetFromData(currentData)
+			self:SaveLastTrackedPoint(currentData.Position, currentData.Part)
+			return
+		end
+
+		if bestPlayer and bestPlayer ~= currentData.Player then
+			local switchMargin = settings.SwitchMargin or 0
+
+			if bestFovDistance and bestFovDistance + switchMargin < currentData.FovDistance then
+				self.CurrentTargetPlayer = bestPlayer
+				self.CurrentTargetCharacter = bestCharacter
+				self.CurrentTargetPart = bestPart
+				self.CurrentTargetPosition = bestPosition
+
+				self:SaveLastTrackedPoint(bestPosition, bestPart)
+				return
+			end
+		end
+
+		self:SetCurrentTargetFromData(currentData)
+		self:SaveLastTrackedPoint(currentData.Position, currentData.Part)
+		return
+	end
 
 	local bestPlayer, bestCharacter, bestPart, bestPosition, bestFovDistance = self:GetClosestPlayerInFov()
 
@@ -1014,8 +1088,6 @@ function AmphibiaAimbot:SelectTarget()
 		return
 	end
 
-	local currentData = self:GetCurrentTargetData()
-
 	if not currentData then
 		self.CurrentTargetPlayer = bestPlayer
 		self.CurrentTargetCharacter = bestCharacter
@@ -1023,7 +1095,6 @@ function AmphibiaAimbot:SelectTarget()
 		self.CurrentTargetPosition = bestPosition
 
 		self:SaveLastTrackedPoint(bestPosition, bestPart)
-
 		return
 	end
 
@@ -1049,7 +1120,6 @@ function AmphibiaAimbot:SelectTarget()
 			self.CurrentTargetPosition = bestPosition
 
 			self:SaveLastTrackedPoint(bestPosition, bestPart)
-
 			return
 		end
 	end
@@ -1069,7 +1139,44 @@ function AmphibiaAimbot:SelectTarget()
 	end
 end
 
---// Mouse Override
+--// Manual Retarget
+
+function AmphibiaAimbot:IsManualRetargetActive()
+	local retarget = self.Config.AimbotSetting.ManualRetarget
+
+	if not retarget or not retarget.Enabled then
+		return false
+	end
+
+	return os.clock() < self.ManualRetargetUntil
+end
+
+function AmphibiaAimbot:UpdateManualRetarget()
+	local retarget = self.Config.AimbotSetting.ManualRetarget
+
+	if not retarget or not retarget.Enabled then
+		self.ManualRetargetUntil = 0
+		return
+	end
+
+	local mouseDelta = UserInputService:GetMouseDelta()
+	local threshold = retarget.Threshold or 0.08
+
+	if mouseDelta.Magnitude <= threshold then
+		return
+	end
+
+	local now = os.clock()
+
+	self.LastManualRetargetInput = now
+	self.ManualRetargetUntil = now + (retarget.BreakTime or 0.13)
+
+	if retarget.ClearCurrentTarget ~= false then
+		self:ClearTarget(retarget.ClearLastTracked == true)
+	end
+end
+
+--// Old Mouse Override
 
 function AmphibiaAimbot:UpdateMouseOverride(deltaTime)
 	local settings = self.Config.AimbotSetting
@@ -1085,19 +1192,16 @@ function AmphibiaAimbot:UpdateMouseOverride(deltaTime)
 	self.LastMouseDelta = mouseDelta
 
 	local mouseSpeed = mouseDelta.Magnitude
-	local threshold = override.Threshold or 1.25
+	local threshold = override.Threshold or 999
 
 	if mouseSpeed > threshold then
 		self.MouseOverrideAlpha = 1
 
 		if override.RetargetOnInput then
-			self.CurrentTargetPlayer = nil
-			self.CurrentTargetCharacter = nil
-			self.CurrentTargetPart = nil
-			self.CurrentTargetPosition = nil
+			self:ClearTarget(false)
 		end
 	else
-		local recoverySpeed = override.RecoverySpeed or 9
+		local recoverySpeed = override.RecoverySpeed or 0
 
 		self.MouseOverrideAlpha = math.clamp(
 			self.MouseOverrideAlpha - deltaTime * recoverySpeed,
@@ -1228,6 +1332,14 @@ function AmphibiaAimbot:Update(deltaTime)
 		return
 	end
 
+	self:UpdateManualRetarget()
+
+	-- Пока игрок чуть ведёт мышкой, полностью отпускаем камеру.
+	-- После BreakTime цель будет выбрана заново по текущему центру FOV.
+	if self:IsManualRetargetActive() then
+		return
+	end
+
 	self:UpdateMouseOverride(deltaTime)
 	self:SelectTarget()
 
@@ -1244,8 +1356,8 @@ function AmphibiaAimbot:Update(deltaTime)
 		self:AimAt(
 			lostPosition,
 			deltaTime,
-			lost.ReturnStrength or 0.85,
-			lost.ReturnSmoothness or 0.1
+			lost.ReturnStrength or 0.7,
+			lost.ReturnSmoothness or 0.12
 		)
 	end
 end
@@ -1275,24 +1387,24 @@ function AmphibiaAimbot:SetEnabled(state)
 		self.MouseOverrideAlpha = 0
 		self.LastMouseDelta = Vector2.zero
 
+		self.ManualRetargetUntil = 0
+		self.LastManualRetargetInput = 0
+
 		self.SmoothedAimPosition = nil
-		self.LastTrackedPosition = nil
-		self.LastTrackedVelocity = Vector3.zero
-		self.LastTrackedTime = 0
-		self.LostTargetStartedAt = nil
+		self:ClearLastTracked()
 
 		self:SelectTarget()
 	else
-		self:ClearTarget()
+		self:ClearTarget(true)
 
 		self.MouseOverrideAlpha = 0
 		self.LastMouseDelta = Vector2.zero
 
+		self.ManualRetargetUntil = 0
+		self.LastManualRetargetInput = 0
+
 		self.SmoothedAimPosition = nil
-		self.LastTrackedPosition = nil
-		self.LastTrackedVelocity = Vector3.zero
-		self.LastTrackedTime = 0
-		self.LostTargetStartedAt = nil
+		self:ClearLastTracked()
 
 		if self.Config.AimbotSetting.UseScriptableCamera and self.Camera and self.OldCameraType then
 			self.Camera.CameraType = self.OldCameraType
@@ -1313,31 +1425,35 @@ function AmphibiaAimbot:GetCurrentTarget()
 	return self.CurrentTargetPlayer, self.CurrentTargetCharacter, self.CurrentTargetPart
 end
 
-function AmphibiaAimbot:ClearTarget()
+function AmphibiaAimbot:ClearTarget(clearLastTracked)
 	self.CurrentTargetPlayer = nil
 	self.CurrentTargetCharacter = nil
 	self.CurrentTargetPart = nil
 	self.CurrentTargetPosition = nil
 	self.SmoothedAimPosition = nil
+
+	if clearLastTracked then
+		self:ClearLastTracked()
+	end
 end
 
 --// Config API
 
 function AmphibiaAimbot:SetConfig(newConfig)
 	self.Config = mergeConfig(self.Config, newConfig)
-	self:ClearTarget()
+	self:ClearTarget(true)
 	self:RefreshCandidates(true)
 end
 
 function AmphibiaAimbot:SetTargetingPart(partName)
 	self.Config.AimbotSetting.TargetingPart = partName
-	self:ClearTarget()
+	self:ClearTarget(false)
 end
 
 function AmphibiaAimbot:SetAimOffset(offset)
 	if typeof(offset) == "Vector3" then
 		self.Config.AimbotSetting.AimOffset = offset
-		self:ClearTarget()
+		self:ClearTarget(false)
 	end
 end
 
@@ -1377,12 +1493,12 @@ end
 
 function AmphibiaAimbot:SetTeamCheck(enabled)
 	self.Config.AimbotSetting.TeamCheck = enabled == true
-	self:ClearTarget()
+	self:ClearTarget(false)
 end
 
 function AmphibiaAimbot:SetTargetSameTeam(enabled)
 	self.Config.AimbotSetting.TargetSameTeam = enabled == true
-	self:ClearTarget()
+	self:ClearTarget(false)
 end
 
 function AmphibiaAimbot:SetSwitchMargin(margin)
@@ -1395,7 +1511,7 @@ end
 
 function AmphibiaAimbot:SetWallCheck(enabled)
 	self.Config.AimbotSetting.WallCheck.Enabled = enabled == true
-	self:ClearTarget()
+	self:ClearTarget(false)
 end
 
 function AmphibiaAimbot:SetPrediction(config)
@@ -1428,6 +1544,16 @@ function AmphibiaAimbot:SetMouseOverride(config)
 	self.Config.AimbotSetting.MouseOverride = current
 end
 
+function AmphibiaAimbot:SetManualRetarget(config)
+	local current = self.Config.AimbotSetting.ManualRetarget or {}
+
+	for key, value in pairs(config) do
+		current[key] = value
+	end
+
+	self.Config.AimbotSetting.ManualRetarget = current
+end
+
 function AmphibiaAimbot:SetWorkspaceScanEnabled(enabled)
 	self.Config.AimbotSetting.WorkspaceScan.Enabled = enabled == true
 	self:RefreshCandidates(true)
@@ -1449,6 +1575,7 @@ function AmphibiaAimbot:DebugTargets()
 	print("LocalRoot:", self:GetLocalRoot())
 	print("Players:", #Players:GetPlayers())
 	print("CachedCandidates:", #self.CachedCandidates)
+	print("ManualRetargetActive:", self:IsManualRetargetActive())
 
 	self:RefreshCandidates(true)
 
@@ -1480,7 +1607,8 @@ function AmphibiaAimbot:DebugTargets()
 		end
 
 		print("TeamAllowed:", self:IsTeamAllowed(player))
-		print("Valid:", self:IsValidPlayerTarget(player))
+		print("Valid as acquisition:", self:IsValidPlayerTarget(player, { IgnoreFov = false }))
+		print("Valid as current lock:", self:IsValidPlayerTarget(player, { IgnoreFov = true }))
 	end
 
 	print("==========================================")
@@ -1504,7 +1632,7 @@ function AmphibiaAimbot:Start()
 
 	RunService:BindToRenderStep(
 		self.Config.AimbotSetting.RenderName,
-		self.Config.AimbotSetting.RenderPriority or 10000,
+		self.Config.AimbotSetting.RenderPriority or 999999,
 		function(deltaTime)
 			self:Update(deltaTime)
 		end
