@@ -26,17 +26,20 @@ local DEFAULT_CONFIG = {
 
 		TargetingPart = "Head",
 
-		-- 0 = instant. 0.08-0.18 = fast but smooth. 0.2+ = soft.
-		Smoothness = 0.12,
+		-- 0 = instant.
+		-- 0.08-0.18 = fast but smooth.
+		-- 0.2+ = softer.
+		Smoothness = 0.16,
 
-		-- 0-1. Lower value lets mouse input fight the aim more.
-		AimStrength = 1,
+		-- 0-1.
+		-- Lower value lets mouse input fight the aim more.
+		AimStrength = 0.75,
 
 		MaxDistance = 1000,
 		MinDistance = 0.1,
 
 		FovColor = Color3.fromRGB(255, 255, 255),
-		FovRadius = 120,
+		FovRadius = 140,
 		FovVisible = true,
 		FovPosition = "Center", -- "Center" / "Mouse"
 
@@ -46,19 +49,35 @@ local DEFAULT_CONFIG = {
 		TeamCheck = false,
 		TargetSameTeam = false,
 
-		-- For mouse retargeting this should usually be false.
+		-- Keep this false if you want the player to move camera with mouse.
 		UseScriptableCamera = false,
 
-		-- AAA retarget behavior
+		-- Target switching
 		AllowUserRetarget = true,
 		RetargetEveryFrame = true,
 
-		-- New target must be this many pixels closer to FOV center.
-		-- Higher = more sticky. Lower = switches easier.
-		SwitchMargin = 22,
+		-- Higher = stickier target.
+		-- Lower = easier to switch target with mouse.
+		SwitchMargin = 12,
 
-		-- If current target leaves FOV, instantly search for a new one.
 		LoseTargetOutsideFov = true,
+
+		MouseOverride = {
+			Enabled = true,
+
+			-- How much mouse movement is needed to weaken aim.
+			Threshold = 0.4,
+
+			-- 0 = fully releases aim while moving mouse.
+			-- 0.05-0.15 = still slightly follows target.
+			MinAimStrength = 0,
+
+			-- How fast aim strength returns after mouse stops.
+			RecoverySpeed = 7,
+
+			-- Clear current target when player moves mouse.
+			RetargetOnInput = true,
+		},
 
 		RenderName = "AmphibiaAimbotRender",
 	},
@@ -133,7 +152,7 @@ function AmphibiaAimbot.new(config)
 	self.Camera = Workspace.CurrentCamera
 
 	self.Started = false
-	self.Enabled = self.Config.AimbotSetting.Enabled
+	self.Enabled = false
 
 	self.CurrentTargetPlayer = nil
 	self.CurrentTargetCharacter = nil
@@ -144,6 +163,9 @@ function AmphibiaAimbot.new(config)
 
 	self.OldCameraType = nil
 	self.OldCameraSubject = nil
+
+	self.MouseOverrideAlpha = 0
+	self.LastMouseDelta = Vector2.zero
 
 	return self
 end
@@ -298,7 +320,7 @@ function AmphibiaAimbot:IsTargetInDistance(targetPart)
 	return false, distance
 end
 
---// FOV Drawing
+--// Drawing FOV
 
 function AmphibiaAimbot:DrawFov()
 	if self.FovCircle then
@@ -465,9 +487,14 @@ function AmphibiaAimbot:GetTargetData(player)
 	end
 
 	local character = self:GetPlayerCharacter(player)
+
+	if not character then
+		return nil
+	end
+
 	local targetPart = self:GetTargetPartFromCharacter(character)
 
-	if not character or not targetPart then
+	if not targetPart then
 		return nil
 	end
 
@@ -584,6 +611,41 @@ function AmphibiaAimbot:SelectTarget()
 	end
 end
 
+--// Mouse Override
+
+function AmphibiaAimbot:UpdateMouseOverride(deltaTime)
+	local settings = self.Config.AimbotSetting
+	local override = settings.MouseOverride
+
+	if not override or not override.Enabled then
+		self.MouseOverrideAlpha = 0
+		self.LastMouseDelta = Vector2.zero
+		return
+	end
+
+	local mouseDelta = UserInputService:GetMouseDelta()
+	self.LastMouseDelta = mouseDelta
+
+	local mouseSpeed = mouseDelta.Magnitude
+	local threshold = override.Threshold or 0.4
+
+	if mouseSpeed > threshold then
+		self.MouseOverrideAlpha = 1
+
+		if override.RetargetOnInput then
+			self:ClearTarget()
+		end
+	else
+		local recoverySpeed = override.RecoverySpeed or 7
+
+		self.MouseOverrideAlpha = math.clamp(
+			self.MouseOverrideAlpha - deltaTime * recoverySpeed,
+			0,
+			1
+		)
+	end
+end
+
 --// Aim Logic
 
 function AmphibiaAimbot:GetAimCFrame(targetPart)
@@ -601,14 +663,27 @@ function AmphibiaAimbot:GetAimAlpha(deltaTime)
 	local settings = self.Config.AimbotSetting
 
 	local smoothness = settings.Smoothness or 0
-	local strength = math.clamp(settings.AimStrength or 1, 0, 1)
+	local baseStrength = math.clamp(settings.AimStrength or 1, 0, 1)
+
+	local override = settings.MouseOverride
+	local minAimStrength = 0
+
+	if override and override.MinAimStrength ~= nil then
+		minAimStrength = math.clamp(override.MinAimStrength, 0, 1)
+	end
+
+	local dynamicStrength = baseStrength
+
+	if self.MouseOverrideAlpha and self.MouseOverrideAlpha > 0 then
+		dynamicStrength = baseStrength - ((baseStrength - minAimStrength) * self.MouseOverrideAlpha)
+	end
 
 	if smoothness <= 0 then
-		return strength
+		return dynamicStrength
 	end
 
 	local alpha = 1 - math.exp(-deltaTime / smoothness)
-	alpha = math.clamp(alpha * strength, 0, 1)
+	alpha = math.clamp(alpha * dynamicStrength, 0, 1)
 
 	return alpha
 end
@@ -644,6 +719,7 @@ function AmphibiaAimbot:Update(deltaTime)
 		return
 	end
 
+	self:UpdateMouseOverride(deltaTime)
 	self:SelectTarget()
 
 	if not self.CurrentTargetPlayer or not self.CurrentTargetCharacter or not self.CurrentTargetPart then
@@ -673,9 +749,15 @@ function AmphibiaAimbot:SetEnabled(state)
 			self.Camera.CameraType = Enum.CameraType.Scriptable
 		end
 
+		self.MouseOverrideAlpha = 0
+		self.LastMouseDelta = Vector2.zero
+
 		self:SelectTarget()
 	else
 		self:ClearTarget()
+
+		self.MouseOverrideAlpha = 0
+		self.LastMouseDelta = Vector2.zero
 
 		if self.Config.AimbotSetting.UseScriptableCamera and self.Camera and self.OldCameraType then
 			self.Camera.CameraType = self.OldCameraType
@@ -753,12 +835,27 @@ function AmphibiaAimbot:SetTeamCheck(enabled)
 	self:ClearTarget()
 end
 
+function AmphibiaAimbot:SetTargetSameTeam(enabled)
+	self.Config.AimbotSetting.TargetSameTeam = enabled == true
+	self:ClearTarget()
+end
+
 function AmphibiaAimbot:SetSwitchMargin(margin)
 	self.Config.AimbotSetting.SwitchMargin = margin
 end
 
 function AmphibiaAimbot:SetUserRetarget(enabled)
 	self.Config.AimbotSetting.AllowUserRetarget = enabled == true
+end
+
+function AmphibiaAimbot:SetMouseOverride(config)
+	local current = self.Config.AimbotSetting.MouseOverride or {}
+
+	for key, value in pairs(config) do
+		current[key] = value
+	end
+
+	self.Config.AimbotSetting.MouseOverride = current
 end
 
 --// Lifecycle
