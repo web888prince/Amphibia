@@ -4,7 +4,7 @@
 
 local Amphibia = {}
 Amphibia.__index = Amphibia
-Amphibia.Version = "1.1 | notification sounds"
+Amphibia.Version = "1.12 | notification sounds volume increased"
 
 --──────────────────────────────────────────────────--
 -- Services
@@ -46,7 +46,7 @@ local Theme = {
 	Sounds = {
 		Notification = "rbxassetid://132969094145770",
 		Notification_Timing = 1.5,
-		Notification_Volume = 1.7
+		Notification_Volume = 2.5,
 	},
 
 	Colors = {
