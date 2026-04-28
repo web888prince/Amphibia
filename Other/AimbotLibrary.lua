@@ -1,3 +1,8 @@
+--// Amphibia Aimbot Module
+--// Player-only aiming module for your own Roblox game.
+--// Control only through API: SetEnabled(true / false).
+--// Drawing API is expected to match executor-style Drawing.new("Circle").
+
 local AmphibiaAimbot = {}
 AmphibiaAimbot.__index = AmphibiaAimbot
 
@@ -21,7 +26,11 @@ local DEFAULT_CONFIG = {
 
 		TargetingPart = "Head",
 
+		-- 0 = instant. 0.08-0.18 = fast but smooth. 0.2+ = soft.
 		Smoothness = 0.12,
+
+		-- 0-1. Lower value lets mouse input fight the aim more.
+		AimStrength = 1,
 
 		MaxDistance = 1000,
 		MinDistance = 0.1,
@@ -31,16 +40,25 @@ local DEFAULT_CONFIG = {
 		FovVisible = true,
 		FovPosition = "Center", -- "Center" / "Mouse"
 
-		LockMode = "Hold", -- "Hold" / "Toggle" / "Always" / "Manual"
-		LockKey = Enum.KeyCode.E,
-
 		RequireAlive = true,
 		RequireCharacterInWorkspace = true,
 
 		TeamCheck = false,
 		TargetSameTeam = false,
 
-		UseScriptableCamera = true,
+		-- For mouse retargeting this should usually be false.
+		UseScriptableCamera = false,
+
+		-- AAA retarget behavior
+		AllowUserRetarget = true,
+		RetargetEveryFrame = true,
+
+		-- New target must be this many pixels closer to FOV center.
+		-- Higher = more sticky. Lower = switches easier.
+		SwitchMargin = 22,
+
+		-- If current target leaves FOV, instantly search for a new one.
+		LoseTargetOutsideFov = true,
 
 		RenderName = "AmphibiaAimbotRender",
 	},
@@ -93,11 +111,11 @@ local function safeRemoveDrawingObject(object)
 		return
 	end
 
-	local ok = pcall(function()
+	local removed = pcall(function()
 		object:Remove()
 	end)
 
-	if not ok then
+	if not removed then
 		pcall(function()
 			object:Destroy()
 		end)
@@ -123,9 +141,6 @@ function AmphibiaAimbot.new(config)
 
 	self.FovCircle = nil
 	self.FovConnection = nil
-
-	self.InputBeganConnection = nil
-	self.InputEndedConnection = nil
 
 	self.OldCameraType = nil
 	self.OldCameraSubject = nil
@@ -283,50 +298,6 @@ function AmphibiaAimbot:IsTargetInDistance(targetPart)
 	return false, distance
 end
 
-function AmphibiaAimbot:IsValidPlayerTarget(player)
-	if not player then
-		return false
-	end
-
-	if player == self.Player then
-		return false
-	end
-
-	if not self:IsTeamAllowed(player) then
-		return false
-	end
-
-	local character = self:GetPlayerCharacter(player)
-
-	if not character then
-		return false
-	end
-
-	if not self:IsCharacterAlive(character) then
-		return false
-	end
-
-	local targetPart = self:GetTargetPartFromCharacter(character)
-
-	if not targetPart then
-		return false
-	end
-
-	local inDistance = self:IsTargetInDistance(targetPart)
-
-	if not inDistance then
-		return false
-	end
-
-	local insideFov = self:IsWorldPositionInsideFov(targetPart.Position)
-
-	if not insideFov then
-		return false
-	end
-
-	return true
-end
-
 --// FOV Drawing
 
 function AmphibiaAimbot:DrawFov()
@@ -442,49 +413,175 @@ function AmphibiaAimbot:IsWorldPositionInsideFov(worldPosition)
 	return false, distance
 end
 
+--// Target Validation
+
+function AmphibiaAimbot:IsValidPlayerTarget(player)
+	if not player then
+		return false
+	end
+
+	if player == self.Player then
+		return false
+	end
+
+	if not self:IsTeamAllowed(player) then
+		return false
+	end
+
+	local character = self:GetPlayerCharacter(player)
+
+	if not character then
+		return false
+	end
+
+	if not self:IsCharacterAlive(character) then
+		return false
+	end
+
+	local targetPart = self:GetTargetPartFromCharacter(character)
+
+	if not targetPart then
+		return false
+	end
+
+	local inDistance = self:IsTargetInDistance(targetPart)
+
+	if not inDistance then
+		return false
+	end
+
+	local insideFov = self:IsWorldPositionInsideFov(targetPart.Position)
+
+	if not insideFov then
+		return false
+	end
+
+	return true
+end
+
+function AmphibiaAimbot:GetTargetData(player)
+	if not self:IsValidPlayerTarget(player) then
+		return nil
+	end
+
+	local character = self:GetPlayerCharacter(player)
+	local targetPart = self:GetTargetPartFromCharacter(character)
+
+	if not character or not targetPart then
+		return nil
+	end
+
+	local insideFov, fovDistance = self:IsWorldPositionInsideFov(targetPart.Position)
+
+	if not insideFov or not fovDistance then
+		return nil
+	end
+
+	local _, worldDistance = self:IsTargetInDistance(targetPart)
+
+	return {
+		Player = player,
+		Character = character,
+		Part = targetPart,
+		FovDistance = fovDistance,
+		WorldDistance = worldDistance or math.huge,
+	}
+end
+
 --// Target Selection
 
-function AmphibiaAimbot:GetPlayerTargets()
-	local targets = {}
+function AmphibiaAimbot:GetClosestPlayerInFov()
+	local closestData = nil
+	local closestFovDistance = math.huge
 
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= self.Player then
-			local character = self:GetPlayerCharacter(player)
+			local data = self:GetTargetData(player)
 
-			if character then
-				table.insert(targets, player)
+			if data and data.FovDistance < closestFovDistance then
+				closestData = data
+				closestFovDistance = data.FovDistance
 			end
 		end
 	end
 
-	return targets
+	if not closestData then
+		return nil, nil, nil, nil
+	end
+
+	return closestData.Player, closestData.Character, closestData.Part, closestData.FovDistance
 end
 
-function AmphibiaAimbot:GetClosestPlayerInFov()
-	local closestPlayer = nil
-	local closestCharacter = nil
-	local closestPart = nil
-	local closestFovDistance = math.huge
+function AmphibiaAimbot:GetCurrentTargetData()
+	if not self.CurrentTargetPlayer then
+		return nil
+	end
 
-	for _, player in ipairs(self:GetPlayerTargets()) do
-		if self:IsValidPlayerTarget(player) then
-			local character = self:GetPlayerCharacter(player)
-			local targetPart = self:GetTargetPartFromCharacter(character)
+	return self:GetTargetData(self.CurrentTargetPlayer)
+end
 
-			if targetPart then
-				local insideFov, fovDistance = self:IsWorldPositionInsideFov(targetPart.Position)
+function AmphibiaAimbot:SelectTarget()
+	local settings = self.Config.AimbotSetting
 
-				if insideFov and fovDistance and fovDistance < closestFovDistance then
-					closestFovDistance = fovDistance
-					closestPlayer = player
-					closestCharacter = character
-					closestPart = targetPart
-				end
-			end
+	local bestPlayer, bestCharacter, bestPart, bestFovDistance = self:GetClosestPlayerInFov()
+
+	if not bestPlayer then
+		self:ClearTarget()
+		return
+	end
+
+	local currentData = self:GetCurrentTargetData()
+
+	if not currentData then
+		self.CurrentTargetPlayer = bestPlayer
+		self.CurrentTargetCharacter = bestCharacter
+		self.CurrentTargetPart = bestPart
+		return
+	end
+
+	if currentData.Player == bestPlayer then
+		self.CurrentTargetPlayer = currentData.Player
+		self.CurrentTargetCharacter = currentData.Character
+		self.CurrentTargetPart = currentData.Part
+		return
+	end
+
+	if not settings.RetargetEveryFrame then
+		self.CurrentTargetPlayer = currentData.Player
+		self.CurrentTargetCharacter = currentData.Character
+		self.CurrentTargetPart = currentData.Part
+		return
+	end
+
+	if not settings.AllowUserRetarget then
+		self.CurrentTargetPlayer = currentData.Player
+		self.CurrentTargetCharacter = currentData.Character
+		self.CurrentTargetPart = currentData.Part
+		return
+	end
+
+	if settings.LoseTargetOutsideFov then
+		local currentInsideFov = self:IsWorldPositionInsideFov(currentData.Part.Position)
+
+		if not currentInsideFov then
+			self.CurrentTargetPlayer = bestPlayer
+			self.CurrentTargetCharacter = bestCharacter
+			self.CurrentTargetPart = bestPart
+			return
 		end
 	end
 
-	return closestPlayer, closestCharacter, closestPart, closestFovDistance
+	local switchMargin = settings.SwitchMargin or 0
+
+	if bestFovDistance + switchMargin < currentData.FovDistance then
+		self.CurrentTargetPlayer = bestPlayer
+		self.CurrentTargetCharacter = bestCharacter
+		self.CurrentTargetPart = bestPart
+	else
+		self.CurrentTargetPlayer = currentData.Player
+		self.CurrentTargetCharacter = currentData.Character
+		self.CurrentTargetPart = currentData.Part
+	end
 end
 
 --// Aim Logic
@@ -500,6 +597,22 @@ function AmphibiaAimbot:GetAimCFrame(targetPart)
 	return CFrame.lookAt(cameraPosition, targetPosition)
 end
 
+function AmphibiaAimbot:GetAimAlpha(deltaTime)
+	local settings = self.Config.AimbotSetting
+
+	local smoothness = settings.Smoothness or 0
+	local strength = math.clamp(settings.AimStrength or 1, 0, 1)
+
+	if smoothness <= 0 then
+		return strength
+	end
+
+	local alpha = 1 - math.exp(-deltaTime / smoothness)
+	alpha = math.clamp(alpha * strength, 0, 1)
+
+	return alpha
+end
+
 function AmphibiaAimbot:AimAt(targetPart, deltaTime)
 	if not targetPart then
 		return
@@ -511,13 +624,12 @@ function AmphibiaAimbot:AimAt(targetPart, deltaTime)
 		return
 	end
 
-	local smoothness = self.Config.AimbotSetting.Smoothness
+	local alpha = self:GetAimAlpha(deltaTime)
 
-	if smoothness and smoothness > 0 then
-		local alpha = math.clamp(deltaTime / smoothness, 0, 1)
-		self.Camera.CFrame = self.Camera.CFrame:Lerp(targetCFrame, alpha)
-	else
+	if alpha >= 1 then
 		self.Camera.CFrame = targetCFrame
+	else
+		self.Camera.CFrame = self.Camera.CFrame:Lerp(targetCFrame, alpha)
 	end
 end
 
@@ -532,13 +644,7 @@ function AmphibiaAimbot:Update(deltaTime)
 		return
 	end
 
-	if not self.CurrentTargetPlayer or not self:IsValidPlayerTarget(self.CurrentTargetPlayer) then
-		local player, character, part = self:GetClosestPlayerInFov()
-
-		self.CurrentTargetPlayer = player
-		self.CurrentTargetCharacter = character
-		self.CurrentTargetPart = part
-	end
+	self:SelectTarget()
 
 	if not self.CurrentTargetPlayer or not self.CurrentTargetCharacter or not self.CurrentTargetPart then
 		return
@@ -557,10 +663,9 @@ function AmphibiaAimbot:SetEnabled(state)
 	end
 
 	self.Enabled = enabled
+	self.Camera = Workspace.CurrentCamera
 
 	if self.Enabled then
-		self.Camera = Workspace.CurrentCamera
-
 		if self.Config.AimbotSetting.UseScriptableCamera and self.Camera then
 			self.OldCameraType = self.Camera.CameraType
 			self.OldCameraSubject = self.Camera.CameraSubject
@@ -568,15 +673,9 @@ function AmphibiaAimbot:SetEnabled(state)
 			self.Camera.CameraType = Enum.CameraType.Scriptable
 		end
 
-		local player, character, part = self:GetClosestPlayerInFov()
-
-		self.CurrentTargetPlayer = player
-		self.CurrentTargetCharacter = character
-		self.CurrentTargetPart = part
+		self:SelectTarget()
 	else
-		self.CurrentTargetPlayer = nil
-		self.CurrentTargetCharacter = nil
-		self.CurrentTargetPart = nil
+		self:ClearTarget()
 
 		if self.Config.AimbotSetting.UseScriptableCamera and self.Camera and self.OldCameraType then
 			self.Camera.CameraType = self.OldCameraType
@@ -637,6 +736,10 @@ function AmphibiaAimbot:SetSmoothness(smoothness)
 	self.Config.AimbotSetting.Smoothness = smoothness
 end
 
+function AmphibiaAimbot:SetAimStrength(strength)
+	self.Config.AimbotSetting.AimStrength = math.clamp(strength, 0, 1)
+end
+
 function AmphibiaAimbot:SetMaxDistance(distance)
 	self.Config.AimbotSetting.MaxDistance = distance
 end
@@ -648,6 +751,14 @@ end
 function AmphibiaAimbot:SetTeamCheck(enabled)
 	self.Config.AimbotSetting.TeamCheck = enabled == true
 	self:ClearTarget()
+end
+
+function AmphibiaAimbot:SetSwitchMargin(margin)
+	self.Config.AimbotSetting.SwitchMargin = margin
+end
+
+function AmphibiaAimbot:SetUserRetarget(enabled)
+	self.Config.AimbotSetting.AllowUserRetarget = enabled == true
 end
 
 --// Lifecycle
@@ -672,37 +783,7 @@ function AmphibiaAimbot:Start()
 		end
 	)
 
-	self.InputBeganConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed then
-			return
-		end
-
-		local settings = self.Config.AimbotSetting
-
-		if input.KeyCode ~= settings.LockKey then
-			return
-		end
-
-		if settings.LockMode == "Toggle" then
-			self:Toggle()
-		elseif settings.LockMode == "Hold" then
-			self:SetEnabled(true)
-		end
-	end)
-
-	self.InputEndedConnection = UserInputService.InputEnded:Connect(function(input)
-		local settings = self.Config.AimbotSetting
-
-		if input.KeyCode ~= settings.LockKey then
-			return
-		end
-
-		if settings.LockMode == "Hold" then
-			self:SetEnabled(false)
-		end
-	end)
-
-	if self.Config.AimbotSetting.LockMode == "Always" then
+	if self.Config.AimbotSetting.Enabled then
 		self:SetEnabled(true)
 	end
 
@@ -717,16 +798,6 @@ function AmphibiaAimbot:Stop()
 	self.Started = false
 
 	RunService:UnbindFromRenderStep(self.Config.AimbotSetting.RenderName)
-
-	if self.InputBeganConnection then
-		self.InputBeganConnection:Disconnect()
-		self.InputBeganConnection = nil
-	end
-
-	if self.InputEndedConnection then
-		self.InputEndedConnection:Disconnect()
-		self.InputEndedConnection = nil
-	end
 
 	self:SetEnabled(false)
 	self:RemoveFov()
