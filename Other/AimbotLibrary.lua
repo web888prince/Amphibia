@@ -26,13 +26,7 @@ local DEFAULT_CONFIG = {
 
 		TargetingPart = "Head",
 
-		-- 0 = instant.
-		-- 0.08-0.18 = fast but smooth.
-		-- 0.2+ = softer.
 		Smoothness = 0.16,
-
-		-- 0-1.
-		-- Lower value lets mouse input fight the aim more.
 		AimStrength = 0.75,
 
 		MaxDistance = 1000,
@@ -49,34 +43,31 @@ local DEFAULT_CONFIG = {
 		TeamCheck = false,
 		TargetSameTeam = false,
 
-		-- Keep this false if you want the player to move camera with mouse.
 		UseScriptableCamera = false,
 
-		-- Target switching
 		AllowUserRetarget = true,
 		RetargetEveryFrame = true,
-
-		-- Higher = stickier target.
-		-- Lower = easier to switch target with mouse.
 		SwitchMargin = 12,
-
 		LoseTargetOutsideFov = true,
 
 		MouseOverride = {
 			Enabled = true,
-
-			-- How much mouse movement is needed to weaken aim.
 			Threshold = 0.4,
-
-			-- 0 = fully releases aim while moving mouse.
-			-- 0.05-0.15 = still slightly follows target.
 			MinAimStrength = 0,
-
-			-- How fast aim strength returns after mouse stops.
 			RecoverySpeed = 7,
-
-			-- Clear current target when player moves mouse.
 			RetargetOnInput = true,
+		},
+
+		-- Main target source. This is the safest way.
+		UsePlayersService = true,
+
+		-- Extra fallback if characters are placed weirdly/nested in workspace.
+		-- It still only accepts models that belong to real Roblox Players.
+		WorkspaceScan = {
+			Enabled = true,
+			DeepScan = true,
+			RefreshRate = 0.25,
+			MaxScannedInstances = 2500,
 		},
 
 		RenderName = "AmphibiaAimbotRender",
@@ -141,6 +132,26 @@ local function safeRemoveDrawingObject(object)
 	end
 end
 
+local function isRealInstance(value)
+	return typeof(value) == "Instance"
+end
+
+local function isRealPlayer(value)
+	return isRealInstance(value) and value:IsA("Player")
+end
+
+local function isRealModel(value)
+	return isRealInstance(value) and value:IsA("Model")
+end
+
+local function isRealBasePart(value)
+	return isRealInstance(value) and value:IsA("BasePart")
+end
+
+local function isValidHumanoid(value)
+	return isRealInstance(value) and value:IsA("Humanoid")
+end
+
 --// Constructor
 
 function AmphibiaAimbot.new(config)
@@ -166,6 +177,9 @@ function AmphibiaAimbot.new(config)
 
 	self.MouseOverrideAlpha = 0
 	self.LastMouseDelta = Vector2.zero
+
+	self.CachedCandidates = {}
+	self.LastCandidateRefresh = 0
 
 	return self
 end
@@ -194,11 +208,17 @@ end
 --// Local Character
 
 function AmphibiaAimbot:GetLocalCharacter()
-	if not self.Player then
+	if not isRealPlayer(self.Player) then
 		return nil
 	end
 
-	return self.Player.Character
+	local character = self.Player.Character
+
+	if not isRealModel(character) then
+		return nil
+	end
+
+	return character
 end
 
 function AmphibiaAimbot:GetLocalRoot()
@@ -208,13 +228,19 @@ function AmphibiaAimbot:GetLocalRoot()
 		return nil
 	end
 
-	return character:FindFirstChild("HumanoidRootPart")
+	local root = character:FindFirstChild("HumanoidRootPart")
+
+	if not isRealBasePart(root) then
+		return nil
+	end
+
+	return root
 end
 
---// Player Target Helpers
+--// Strict Player / Character Filtering
 
 function AmphibiaAimbot:IsCharacterInWorkspace(character)
-	if not character then
+	if not isRealModel(character) then
 		return false
 	end
 
@@ -225,18 +251,50 @@ function AmphibiaAimbot:IsCharacterInWorkspace(character)
 	return character:IsDescendantOf(Workspace)
 end
 
+function AmphibiaAimbot:GetPlayerFromCharacter(character)
+	if not isRealModel(character) then
+		return nil
+	end
+
+	local player = Players:GetPlayerFromCharacter(character)
+
+	if not isRealPlayer(player) then
+		return nil
+	end
+
+	return player
+end
+
+function AmphibiaAimbot:IsRealPlayerCharacter(character)
+	if not isRealModel(character) then
+		return false
+	end
+
+	if not self:IsCharacterInWorkspace(character) then
+		return false
+	end
+
+	local owner = self:GetPlayerFromCharacter(character)
+
+	if not owner then
+		return false
+	end
+
+	return true
+end
+
 function AmphibiaAimbot:GetPlayerCharacter(player)
-	if not player then
+	if not isRealPlayer(player) then
+		return nil
+	end
+
+	if player == self.Player then
 		return nil
 	end
 
 	local character = player.Character
 
-	if not character then
-		return nil
-	end
-
-	if not self:IsCharacterInWorkspace(character) then
+	if not self:IsRealPlayerCharacter(character) then
 		return nil
 	end
 
@@ -244,11 +302,17 @@ function AmphibiaAimbot:GetPlayerCharacter(player)
 end
 
 function AmphibiaAimbot:GetHumanoid(character)
-	if not character then
+	if not isRealModel(character) then
 		return nil
 	end
 
-	return character:FindFirstChildOfClass("Humanoid")
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+	if not isValidHumanoid(humanoid) then
+		return nil
+	end
+
+	return humanoid
 end
 
 function AmphibiaAimbot:IsCharacterAlive(character)
@@ -266,21 +330,27 @@ function AmphibiaAimbot:IsCharacterAlive(character)
 end
 
 function AmphibiaAimbot:GetTargetPartFromCharacter(character)
-	if not character then
+	if not isRealModel(character) then
 		return nil
 	end
 
 	local partName = self.Config.AimbotSetting.TargetingPart
 	local part = character:FindFirstChild(partName)
 
-	if part and part:IsA("BasePart") then
+	if isRealBasePart(part) then
 		return part
 	end
 
 	local root = character:FindFirstChild("HumanoidRootPart")
 
-	if root and root:IsA("BasePart") then
+	if isRealBasePart(root) then
 		return root
+	end
+
+	local head = character:FindFirstChild("Head")
+
+	if isRealBasePart(head) then
+		return head
 	end
 
 	return nil
@@ -291,7 +361,7 @@ function AmphibiaAimbot:IsTeamAllowed(targetPlayer)
 		return true
 	end
 
-	if not self.Player or not targetPlayer then
+	if not isRealPlayer(self.Player) or not isRealPlayer(targetPlayer) then
 		return false
 	end
 
@@ -305,7 +375,7 @@ end
 function AmphibiaAimbot:IsTargetInDistance(targetPart)
 	local localRoot = self:GetLocalRoot()
 
-	if not localRoot or not targetPart then
+	if not localRoot or not isRealBasePart(targetPart) then
 		return false, nil
 	end
 
@@ -318,6 +388,118 @@ function AmphibiaAimbot:IsTargetInDistance(targetPart)
 	end
 
 	return false, distance
+end
+
+--// Candidate Collection
+
+function AmphibiaAimbot:AddCandidate(candidates, usedPlayers, player, character)
+	if not isRealPlayer(player) then
+		return
+	end
+
+	if player == self.Player then
+		return
+	end
+
+	if usedPlayers[player] then
+		return
+	end
+
+	if not isRealModel(character) then
+		return
+	end
+
+	if not self:IsRealPlayerCharacter(character) then
+		return
+	end
+
+	local owner = self:GetPlayerFromCharacter(character)
+
+	if owner ~= player then
+		return
+	end
+
+	usedPlayers[player] = true
+
+	table.insert(candidates, {
+		Player = player,
+		Character = character,
+	})
+end
+
+function AmphibiaAimbot:CollectFromPlayersService(candidates, usedPlayers)
+	if not self.Config.AimbotSetting.UsePlayersService then
+		return
+	end
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if isRealPlayer(player) then
+			local character = player.Character
+			self:AddCandidate(candidates, usedPlayers, player, character)
+		end
+	end
+end
+
+function AmphibiaAimbot:CollectFromWorkspaceScan(candidates, usedPlayers)
+	local scanSettings = self.Config.AimbotSetting.WorkspaceScan
+
+	if not scanSettings or not scanSettings.Enabled then
+		return
+	end
+
+	local scanned = 0
+	local instances
+
+	if scanSettings.DeepScan then
+		instances = Workspace:GetDescendants()
+	else
+		instances = Workspace:GetChildren()
+	end
+
+	for _, instance in ipairs(instances) do
+		scanned += 1
+
+		if scanned > (scanSettings.MaxScannedInstances or 2500) then
+			break
+		end
+
+		if isRealModel(instance) then
+			local player = self:GetPlayerFromCharacter(instance)
+
+			if isRealPlayer(player) then
+				self:AddCandidate(candidates, usedPlayers, player, instance)
+			end
+		end
+	end
+end
+
+function AmphibiaAimbot:RefreshCandidates(force)
+	local now = os.clock()
+	local scanSettings = self.Config.AimbotSetting.WorkspaceScan
+	local refreshRate = 0.25
+
+	if scanSettings and scanSettings.RefreshRate then
+		refreshRate = scanSettings.RefreshRate
+	end
+
+	if not force and now - self.LastCandidateRefresh < refreshRate then
+		return
+	end
+
+	self.LastCandidateRefresh = now
+
+	local candidates = {}
+	local usedPlayers = {}
+
+	self:CollectFromPlayersService(candidates, usedPlayers)
+	self:CollectFromWorkspaceScan(candidates, usedPlayers)
+
+	self.CachedCandidates = candidates
+end
+
+function AmphibiaAimbot:GetCandidates()
+	self:RefreshCandidates(false)
+	return self.CachedCandidates
 end
 
 --// Drawing FOV
@@ -383,6 +565,10 @@ end
 --// FOV Logic
 
 function AmphibiaAimbot:GetFovCenter()
+	if not self.Camera then
+		return Vector2.zero
+	end
+
 	if self.Config.AimbotSetting.FovPosition == "Mouse" then
 		return UserInputService:GetMouseLocation()
 	end
@@ -438,7 +624,7 @@ end
 --// Target Validation
 
 function AmphibiaAimbot:IsValidPlayerTarget(player)
-	if not player then
+	if not isRealPlayer(player) then
 		return false
 	end
 
@@ -453,6 +639,10 @@ function AmphibiaAimbot:IsValidPlayerTarget(player)
 	local character = self:GetPlayerCharacter(player)
 
 	if not character then
+		return false
+	end
+
+	if character == self:GetLocalCharacter() then
 		return false
 	end
 
@@ -521,8 +711,10 @@ function AmphibiaAimbot:GetClosestPlayerInFov()
 	local closestData = nil
 	local closestFovDistance = math.huge
 
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= self.Player then
+	for _, candidate in ipairs(self:GetCandidates()) do
+		local player = candidate.Player
+
+		if isRealPlayer(player) then
 			local data = self:GetTargetData(player)
 
 			if data and data.FovDistance < closestFovDistance then
@@ -649,7 +841,7 @@ end
 --// Aim Logic
 
 function AmphibiaAimbot:GetAimCFrame(targetPart)
-	if not self.Camera or not targetPart then
+	if not self.Camera or not isRealBasePart(targetPart) then
 		return nil
 	end
 
@@ -689,7 +881,7 @@ function AmphibiaAimbot:GetAimAlpha(deltaTime)
 end
 
 function AmphibiaAimbot:AimAt(targetPart, deltaTime)
-	if not targetPart then
+	if not isRealBasePart(targetPart) then
 		return
 	end
 
@@ -700,6 +892,10 @@ function AmphibiaAimbot:AimAt(targetPart, deltaTime)
 	end
 
 	local alpha = self:GetAimAlpha(deltaTime)
+
+	if alpha <= 0 then
+		return
+	end
 
 	if alpha >= 1 then
 		self.Camera.CFrame = targetCFrame
@@ -742,6 +938,8 @@ function AmphibiaAimbot:SetEnabled(state)
 	self.Camera = Workspace.CurrentCamera
 
 	if self.Enabled then
+		self:RefreshCandidates(true)
+
 		if self.Config.AimbotSetting.UseScriptableCamera and self.Camera then
 			self.OldCameraType = self.Camera.CameraType
 			self.OldCameraSubject = self.Camera.CameraSubject
@@ -789,6 +987,7 @@ end
 function AmphibiaAimbot:SetConfig(newConfig)
 	self.Config = mergeConfig(self.Config, newConfig)
 	self:ClearTarget()
+	self:RefreshCandidates(true)
 end
 
 function AmphibiaAimbot:SetTargetingPart(partName)
@@ -858,6 +1057,16 @@ function AmphibiaAimbot:SetMouseOverride(config)
 	self.Config.AimbotSetting.MouseOverride = current
 end
 
+function AmphibiaAimbot:SetWorkspaceScanEnabled(enabled)
+	self.Config.AimbotSetting.WorkspaceScan.Enabled = enabled == true
+	self:RefreshCandidates(true)
+end
+
+function AmphibiaAimbot:SetWorkspaceDeepScan(enabled)
+	self.Config.AimbotSetting.WorkspaceScan.DeepScan = enabled == true
+	self:RefreshCandidates(true)
+end
+
 --// Lifecycle
 
 function AmphibiaAimbot:Start()
@@ -867,6 +1076,8 @@ function AmphibiaAimbot:Start()
 
 	self.Started = true
 	self.Camera = Workspace.CurrentCamera
+
+	self:RefreshCandidates(true)
 
 	if self.Config.DrawingSetting.Enabled then
 		self:DrawFov()
@@ -898,6 +1109,9 @@ function AmphibiaAimbot:Stop()
 
 	self:SetEnabled(false)
 	self:RemoveFov()
+
+	self.CachedCandidates = {}
+	self.LastCandidateRefresh = 0
 
 	self:Log("info", "Stopped.")
 end
