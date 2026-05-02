@@ -1,10 +1,9 @@
 --// Amphibia GUI Library
 --// One-file ModuleScript
---// Usage example is at the bottom of this file.
 
 local Amphibia = {}
 Amphibia.__index = Amphibia
-Amphibia.Version = "1.12 | notification sounds volume increased"
+Amphibia.Version = "1.2 | fixed keybinds and sliders"
 
 --──────────────────────────────────────────────────--
 -- Services
@@ -171,19 +170,128 @@ local function ClampNumber(value, min, max)
 	return math.clamp(value, min, max)
 end
 
+local function GetStepDecimals(step)
+	step = tonumber(step) or 1
+
+	if step <= 0 then
+		return 0
+	end
+
+	local text = string.format("%.10f", step)
+	text = text:gsub("0+$", "")
+	text = text:gsub("%.$", "")
+
+	local decimals = text:match("%.(%d+)$")
+	if not decimals then
+		return 0
+	end
+
+	return math.clamp(#decimals, 0, 8)
+end
+
+local function RoundNumberToDecimals(value, decimals)
+	local factor = 10 ^ decimals
+
+	if value >= 0 then
+		return math.floor(value * factor + 0.5) / factor
+	else
+		return math.ceil(value * factor - 0.5) / factor
+	end
+end
+
 local function RoundToStep(value, step)
 	step = tonumber(step) or 1
+
 	if step <= 0 then
 		return value
 	end
-	return math.floor((value / step) + 0.5) * step
+
+	local rounded = math.floor((value / step) + 0.5) * step
+	return RoundNumberToDecimals(rounded, GetStepDecimals(step))
+end
+
+local function FormatSliderNumber(value, step)
+	local decimals = GetStepDecimals(step)
+	local rounded = RoundNumberToDecimals(tonumber(value) or 0, decimals)
+
+	if math.abs(rounded) < 1e-8 then
+		rounded = 0
+	end
+
+	local text = string.format("%." .. tostring(decimals) .. "f", rounded)
+
+	if decimals > 0 then
+		text = text:gsub("0+$", "")
+		text = text:gsub("%.$", "")
+	end
+
+	if text == "-0" then
+		text = "0"
+	end
+
+	return text
+end
+
+local function ResolveInputBind(input)
+	if not input then
+		return Enum.KeyCode.Unknown
+	end
+
+	if input.KeyCode and input.KeyCode ~= Enum.KeyCode.Unknown then
+		return input.KeyCode
+	end
+
+	if input.UserInputType then
+		return input.UserInputType
+	end
+
+	return Enum.KeyCode.Unknown
+end
+
+local function ResolveBindValue(value)
+	if typeof(value) == "EnumItem" then
+		return value
+	end
+
+	if typeof(value) == "string" then
+		local keyCode = Enum.KeyCode[value]
+		if keyCode then
+			return keyCode
+		end
+
+		local inputType = Enum.UserInputType[value]
+		if inputType then
+			return inputType
+		end
+	end
+
+	return Enum.KeyCode.Unknown
 end
 
 local function ShortKeyName(keyCode)
 	if typeof(keyCode) == "EnumItem" then
 		return keyCode.Name
 	end
+
 	return tostring(keyCode or "None")
+end
+
+local function InputMatchesBind(input, bind)
+	bind = ResolveBindValue(bind)
+
+	if typeof(bind) ~= "EnumItem" then
+		return false
+	end
+
+	if input.KeyCode == bind then
+		return true
+	end
+
+	if input.UserInputType == bind then
+		return true
+	end
+
+	return ResolveInputBind(input) == bind
 end
 
 local function RemoveGradients(parent)
@@ -378,12 +486,14 @@ end
 local function CreateBaseControl(section, config, explorerName)
 	config = config or {}
 
+	local height = config.Height or 29
+
 	local holder = New("Frame", {
 		Parent = section.Holder,
 		Name = config.ExplorerName or explorerName or "Control",
 		LayoutOrder = config.LayoutOrder or 0,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0, 265, 0, 29),
+		Size = UDim2.new(0, 265, 0, height),
 		AutomaticSize = Enum.AutomaticSize.None,
 		ZIndex = 1,
 	})
@@ -392,7 +502,7 @@ local function CreateBaseControl(section, config, explorerName)
 		Parent = holder,
 		Name = "Hitbox",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 29),
+		Size = UDim2.new(1, 0, 0, height),
 		Text = "",
 		TextTransparency = 1,
 		TextSize = 1,
@@ -414,6 +524,7 @@ local function CreateBaseControl(section, config, explorerName)
 		TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
 		TextStrokeTransparency = 0,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 		ZIndex = 2,
 	})
 
@@ -1253,21 +1364,22 @@ function Category:CreateTab(name)
 		AutoButtonColor = false,
 	})
 
-tab.Content = New("ScrollingFrame", {
-	Parent = self.Window.TabsContentFolder,
-	Name = tab.Name .. "TabContent",
-	BackgroundTransparency = 1,
-	Position = UDim2.new(0, 185, 0, 49),
-	Size = UDim2.new(0, 582, 0, 435),
-	ZIndex = 1,
-	AutomaticCanvasSize = Enum.AutomaticSize.Y,
-	CanvasSize = UDim2.new(0, 0, 0, 0),
-	ScrollBarImageTransparency = 1,
-	ScrollBarThickness = 0,
-	VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right,
-	Visible = false,
-	BorderSizePixel = 0,
-})
+	tab.Content = New("ScrollingFrame", {
+		Parent = self.Window.TabsContentFolder,
+		Name = tab.Name .. "TabContent",
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 185, 0, 49),
+		Size = UDim2.new(0, 582, 0, 435),
+		ZIndex = 1,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		ScrollBarImageTransparency = 1,
+		ScrollBarThickness = 0,
+		VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right,
+		Visible = false,
+		BorderSizePixel = 0,
+	})
+
 	tab.LeftColumn = New("Frame", {
 		Parent = tab.Content,
 		Name = "LeftColumn",
@@ -1698,6 +1810,7 @@ function Section:CreateDropdown(config)
 		Size = UDim2.new(0, 62, 0, 18),
 		ZIndex = 3,
 	})
+
 	local valueText = New("TextLabel", {
 		Parent = valueBadge,
 		Name = "ValueText",
@@ -1948,12 +2061,15 @@ function Section:CreateTextbox(config)
 	local api = {}
 	api.Instance = holder
 	api.TextBox = textbox
+
 	function api:Set(text)
 		textbox.Text = tostring(text or "")
 	end
+
 	function api:Get()
 		return textbox.Text
 	end
+
 	function api:Destroy()
 		holder:Destroy()
 	end
@@ -1973,16 +2089,11 @@ function Section:CreateSlider(config)
 	local value = ClampNumber(config.Default or min, min, max)
 	value = RoundToStep(value, step)
 
-	local holder, hitbox, nameText = CreateBaseControl(self, {
-		Name = config.Name or "Slider",
-		LayoutOrder = config.LayoutOrder,
-		ExplorerName = config.ExplorerName,
-	}, "Slider")
-
+	local sliderName = tostring(config.Name or "Slider")
 	local holderWidth = 265
 
 	local labelBounds = Services.TextService:GetTextSize(
-		tostring(config.Name or "Slider"),
+		sliderName,
 		14,
 		Theme.Font,
 		Vector2.new(math.huge, math.huge)
@@ -1990,9 +2101,9 @@ function Section:CreateSlider(config)
 
 	local widestValueBounds = 0
 	for _, text in ipairs({
-		tostring(min),
-		tostring(max),
-		tostring(value),
+		FormatSliderNumber(min, step),
+		FormatSliderNumber(max, step),
+		FormatSliderNumber(value, step),
 	}) do
 		local bounds = Services.TextService:GetTextSize(
 			text,
@@ -2006,12 +2117,39 @@ function Section:CreateSlider(config)
 		end
 	end
 
-	local valueBoxWidth = math.clamp(math.ceil(widestValueBounds) + 8, 20, 28)
-	local sliderStartX = math.clamp(math.ceil(labelBounds.X) + 16, 90, 128)
-	local sliderRightPadding = valueBoxWidth + 12
-	local sliderWidth = math.max(70, holderWidth - sliderStartX - sliderRightPadding)
+	local valueBoxWidth = math.clamp(math.ceil(widestValueBounds) + 10, 22, 68)
+	local useStackedLayout = labelBounds.X > 118
+	local controlHeight = useStackedLayout and 44 or 29
 
-	nameText.Size = UDim2.new(0, sliderStartX - 8, 1, 0)
+	local holder, hitbox, nameText = CreateBaseControl(self, {
+		Name = sliderName,
+		LayoutOrder = config.LayoutOrder,
+		ExplorerName = config.ExplorerName,
+		Height = controlHeight,
+	}, "Slider")
+
+	local sliderStartX
+	local sliderY
+	local sliderWidth
+	local valueBoxY
+
+	if useStackedLayout then
+		nameText.Position = UDim2.new(0, 0, 0, 0)
+		nameText.Size = UDim2.new(1, -4, 0, 20)
+
+		sliderStartX = 2
+		sliderY = 32
+		valueBoxY = 32
+		sliderWidth = math.max(0, holderWidth - valueBoxWidth - 16)
+	else
+		sliderStartX = math.ceil(labelBounds.X) + 16
+		sliderY = 15
+		valueBoxY = 15
+		sliderWidth = math.max(0, holderWidth - sliderStartX - valueBoxWidth - 12)
+
+		nameText.Position = UDim2.new(0, 0, 0, 0)
+		nameText.Size = UDim2.new(0, math.max(10, sliderStartX - 10), 1, 0)
+	end
 
 	local sliderLine = New("Frame", {
 		Parent = hitbox,
@@ -2019,9 +2157,10 @@ function Section:CreateSlider(config)
 		AnchorPoint = Vector2.new(0, 0.5),
 		BackgroundColor3 = Theme.Colors.Text,
 		BorderSizePixel = 0,
-		Position = UDim2.new(0, sliderStartX, 0.5, 0),
+		Position = UDim2.new(0, sliderStartX, 0, sliderY),
 		Size = UDim2.new(0, sliderWidth, 0, 3),
 		ZIndex = 3,
+		Visible = sliderWidth > 0,
 	})
 
 	AddCorner(sliderLine, 99)
@@ -2055,7 +2194,6 @@ function Section:CreateSlider(config)
 		BorderSizePixel = 0,
 		ZIndex = 5,
 	})
-
 	AddCorner(knob, 99)
 	AddGradient(knob, {
 		Rotation = -45,
@@ -2071,12 +2209,12 @@ function Section:CreateSlider(config)
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Position = UDim2.new(1, -4, 0.5, 0),
+		Position = UDim2.new(1, -4, 0, valueBoxY),
 		Size = UDim2.new(0, valueBoxWidth, 0, 14),
 		Font = Theme.Font,
 		PlaceholderColor3 = Color3.fromRGB(178, 178, 178),
-		PlaceholderText = tostring(min),
-		Text = tostring(value),
+		PlaceholderText = FormatSliderNumber(min, step),
+		Text = FormatSliderNumber(value, step),
 		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextYAlignment = Enum.TextYAlignment.Center,
@@ -2087,6 +2225,10 @@ function Section:CreateSlider(config)
 
 	local dragging = false
 	local api = {}
+
+	local function normalizeValue(v)
+		return ClampNumber(RoundToStep(v, step), min, max)
+	end
 
 	local function valueToAlpha(v)
 		if max == min then
@@ -2106,7 +2248,7 @@ function Section:CreateSlider(config)
 			Size = UDim2.new(alpha, 0, 1, 0)
 		})
 
-		valueBox.Text = tostring(value)
+		valueBox.Text = FormatSliderNumber(value, step)
 
 		if not skipCallback then
 			SafeCallback(config.Callback, value)
@@ -2124,12 +2266,12 @@ function Section:CreateSlider(config)
 		local alpha = math.clamp((x - left) / width, 0, 1)
 		local raw = min + ((max - min) * alpha)
 
-		value = ClampNumber(RoundToStep(raw, step), min, max)
+		value = normalizeValue(raw)
 		render(false)
 	end
 
 	function api:Set(v)
-		value = ClampNumber(RoundToStep(v, step), min, max)
+		value = normalizeValue(v)
 		render(false)
 	end
 
@@ -2143,6 +2285,9 @@ function Section:CreateSlider(config)
 
 	api.Instance = holder
 	api.TextBox = valueBox
+	api.SliderLine = sliderLine
+	api.Fill = fill
+	api.Knob = knob
 
 	sliderLine.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -2188,11 +2333,7 @@ function Section:CreateKeybind(config)
 	end
 	config = config or {}
 
-	local currentKey = config.Default or config.Key or Enum.KeyCode.Unknown
-	if typeof(currentKey) == "string" then
-		currentKey = Enum.KeyCode[currentKey] or Enum.KeyCode.Unknown
-	end
-
+	local currentKey = ResolveBindValue(config.Default or config.Key or Enum.KeyCode.Unknown)
 	local listening = false
 	local ignoreGameProcessed = config.IgnoreGameProcessed ~= false
 
@@ -2207,8 +2348,8 @@ function Section:CreateKeybind(config)
 		Name = "KeybindFrame",
 		BackgroundColor3 = Color3.fromRGB(139, 139, 139),
 		BorderSizePixel = 0,
-		Position = UDim2.new(0.837, 0, 0.165, 0),
-		Size = UDim2.new(0, 37, 0, 19),
+		Position = UDim2.new(0.77, 0, 0.165, 0),
+		Size = UDim2.new(0, 72, 0, 19),
 		ZIndex = 3,
 	})
 
@@ -2228,29 +2369,35 @@ function Section:CreateKeybind(config)
 		Name = "KeybindText",
 		BorderSizePixel = 0,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.new(1, -6, 1, 0),
+		Position = UDim2.new(0, 3, 0, 0),
 		Font = Theme.Font,
 		Text = ShortKeyName(currentKey),
-		TextSize = 17,
+		TextSize = 11,
 		TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
 		TextStrokeTransparency = 0.5,
 		TextColor3 = Color3.fromRGB(211, 211, 211),
+		TextTruncate = Enum.TextTruncate.AtEnd,
 		ZIndex = 4,
 	})
 
 	local api = {}
 
-	function api:Set(key)
-		if typeof(key) == "string" then
-			key = Enum.KeyCode[key] or Enum.KeyCode.Unknown
-		end
-		currentKey = key
+	function api:Set(key, skipChangedCallback)
+		currentKey = ResolveBindValue(key)
 		keyText.Text = ShortKeyName(currentKey)
-		SafeCallback(config.Changed, currentKey)
+
+		if not skipChangedCallback then
+			SafeCallback(config.Changed, currentKey)
+		end
 	end
 
 	function api:Get()
 		return currentKey
+	end
+
+	function api:Is(input)
+		return InputMatchesBind(input, currentKey)
 	end
 
 	function api:Destroy()
@@ -2259,6 +2406,8 @@ function Section:CreateKeybind(config)
 
 	api.Instance = holder
 	api.Button = hitbox
+	api.Frame = keyFrame
+	api.Text = keyText
 
 	hitbox.MouseButton1Click:Connect(function()
 		listening = true
@@ -2277,15 +2426,15 @@ function Section:CreateKeybind(config)
 			if input.KeyCode == Enum.KeyCode.Backspace or input.KeyCode == Enum.KeyCode.Delete then
 				api:Set(Enum.KeyCode.Unknown)
 			else
-				api:Set(input.KeyCode)
+				api:Set(ResolveInputBind(input))
 			end
 
 			Tween(keyFrame, Theme.Tween.Fast, { BackgroundColor3 = Color3.fromRGB(139, 139, 139) })
 			return
 		end
 
-		if currentKey ~= Enum.KeyCode.Unknown and input.KeyCode == currentKey then
-			SafeCallback(config.Callback, currentKey)
+		if currentKey ~= Enum.KeyCode.Unknown and InputMatchesBind(input, currentKey) then
+			SafeCallback(config.Callback, currentKey, input)
 		end
 	end)
 
@@ -3356,80 +3505,32 @@ local Window = Amphibia.CreateWindow({
 
 local MainCategory = Window:CreateCategory("Main")
 local PlayerTab = MainCategory:CreateTab("Player")
-local WorldTab = MainCategory:CreateTab("World")
 
 local MainSection = PlayerTab:CreateSection("Main", "Left")
-local PlayerSection = PlayerTab:CreateSection("Player", "Right")
 
-MainSection:CreateButton({
-	Name = "Button",
-	Callback = function()
-		print("pressed")
-		Window:Notify({ Title = "Button", Description = "Button pressed", Duration = 3 })
+MainSection:CreateKeybind({
+	Name = "Universal keybind",
+	Default = Enum.UserInputType.MouseButton2,
+
+	Changed = function(bind)
+		print("new bind:", bind, bind.Name)
+	end,
+
+	Callback = function(bind, input)
+		print("pressed bind:", bind, bind.Name, input.UserInputType, input.KeyCode)
 	end,
 })
 
-MainSection:CreateDropdown({
-	Name = "Dropdown",
-	Options = { "Option 1", "Option 2", "Option 3" },
-	Default = "Option 1",
-	Callback = function(value)
-		print("dropdown:", value)
-	end,
-})
-
-MainSection:CreateToggle({
-	Name = "Toggle",
-	Default = false,
-	Callback = function(value)
-		print("toggle:", value)
-	end,
-})
-
-MainSection:CreateColorPicker({
-	Name = "Color picker",
-	Default = Color3.fromRGB(150, 64, 255),
-	Callback = function(color)
-		print("color:", color)
-	end,
-})
-
-PlayerSection:CreateTextbox({
-	Name = "Textbox",
-	Placeholder = "Text",
-	Callback = function(text, enterPressed)
-		print("textbox:", text, enterPressed)
-	end,
-})
-
-PlayerSection:CreateSlider({
-	Name = "Slider",
+MainSection:CreateSlider({
+	Name = "Very very very long slider name that should not overlap",
 	Min = 0,
-	Max = 100,
-	Default = 25,
-	Step = 1,
+	Max = 10000.21,
+	Default = 2.000000006,
+	Step = 0.01,
 	Callback = function(value)
 		print("slider:", value)
 	end,
 })
-
-PlayerSection:CreateKeybind({
-	Name = "Keybind",
-	Default = Enum.KeyCode.H,
-	Callback = function(key)
-		print("key pressed:", key)
-	end,
-})
-
-local WorldSection = WorldTab:CreateSection("World", "Left")
-WorldSection:CreateButton({
-	Name = "World button",
-	Callback = function()
-		print("world")
-	end,
-})
-
-Window:SelectTab("Player")
 ]]
 
 return Amphibia
